@@ -67,7 +67,7 @@ export default function TodoItem({
       // data-id={item.id}
     >
       {/* Item handle */}
-      <div className="mr-1 text-gray-400 cursor-move item-drag-handle hover:text-gray-600">
+      <div className="text-gray-400 cursor-move item-drag-handle hover:text-gray-600">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -100,7 +100,7 @@ export default function TodoItem({
       {/* Item description */}
       <label
         htmlFor={`item-${item.id}`}
-        className="flex-1 overflow-hidden text-sm font-medium leading-normal break-words whitespace-normal peer-checked:line-through peer-checked:text-gray-500"
+        className="flex-1 overflow-hidden text-sm font-medium leading-normal break-words whitespace-normal peer-checked:line-through peer-checked:text-gray-400"
       >
         {item.description}
       </label>

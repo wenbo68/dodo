@@ -138,20 +138,16 @@ export function TodoLists({
     // all lists (grid)
     <div
       ref={gridRef}
-      className={`grid w-full gap-5 ${
-        isOpen
-          ? "grid-cols-none sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-      }`}
+      className={`w-full grid gap-3 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]`}
     >
       {/* 1 list */}
       {listsWithItemsView.map((list) => (
         <div
           key={list.id ?? list.tempId}
-          className="flex flex-col p-4 bg-white rounded-lg shadow-md min-w-[250px] max-w-[250px]"
+          className="flex flex-col border p-3 bg-white rounded-lg shadow-lg min-w-[250px]"
           // data-id={list.id ?? list.tempId}
         >
-          <div className="flex justify-between">
+          <div className="flex justify-between mb-1">
             {/* list title */}
             <h3 className="overflow-hidden text-lg font-semibold break-words">{list.title}</h3>
             {/* list handle */}
@@ -175,10 +171,10 @@ export function TodoLists({
               </svg>
             </div>
           </div>
-          <div className="flex-grow overflow-y-auto">
+          {/* <div className="flex-grow overflow-y-auto"> */}
             {/* all items */}
             <ul
-              className="space-y-2"
+              // className="space-y-1"
               ref={(el) => setItemsRef(el, String(list.id ?? list.tempId))}
               // data-list-id={list.id}
             >
@@ -230,7 +226,7 @@ export function TodoLists({
                 // </li>
               ))}
             </ul>
-          </div>
+          {/* </div> */}
           {/* {list.items.length === 0 && (
             <p className="text-sm italic text-gray-500">No items in this list</p>
           )} */}
