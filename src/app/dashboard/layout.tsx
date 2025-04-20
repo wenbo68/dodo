@@ -1,6 +1,6 @@
 import Link from "next/link";
-import AddList from "~/components/add-list";
-import DashboardSidebarPage from "~/components/dashboard-sidebar-page";
+import AddList from "@/components/dashboard/add-list";
+import DashboardSidebarPage from "@/components/dashboard/dashboard-sidebar-page";
 import { getListsWithItems } from "~/lib/db/list-utils";
 import { auth, signOut } from "~/server/auth";
 import { ListWithItems, ListWithItemsView } from "~/types";
@@ -34,7 +34,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
       <form
         action={async () => {
           "use server";
-          await signOut({ redirectTo: "/" });
+          await signOut({ redirectTo: "/api/auth/signin" });
         }}
       >
         <button>

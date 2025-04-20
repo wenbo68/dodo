@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface SectionTitleProps {
-    children: React.ReactElement;
-}
+    children: React.ReactElement<{ className?: string }>;
+  }
 
 const SectionTitle: React.FC<SectionTitleProps> = ({ children }) => {
     return React.cloneElement(children, {

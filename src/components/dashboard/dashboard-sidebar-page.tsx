@@ -81,9 +81,10 @@ export default function DashboardSidebarPage({
         Add List
       </button>
       {/* sidebar + page.tsx: side by side */}
-      <div className="flex">
+      {/* overflow-hidden will hide the scrollbar */}
+      <div className="flex overflow-hidden">
         <AddListSidebar isOpen={isOpen} setIsOpen={setIsOpen} userId={userId} onSubmit={onSubmit} />
-        <div>{children}</div>
+        {children}
       </div>
     </AddListContext.Provider>
   )
