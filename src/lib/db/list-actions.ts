@@ -35,8 +35,6 @@ export async function addListWithItems({
         throw new Error("Could not add list to db");
       }
 
-      console.log("list: ", list);
-      console.log("items empty? ", userItems.length===0);
       //add items to new list
       const listItems = userItems.length===0? []: await tx.insert(items).values(
         userItems.map((item, index) => ({
@@ -67,36 +65,42 @@ export async function addListWithItems({
 }
 
 export async function updateListPosition({
+  userId,
   oldPosition,
   newPosition
 }: {
+  userId: string,
   oldPosition: number
   newPosition: number
 }) {
-  const [oldList, newList] = await Promise.all([
+  const [targetList] = await Promise.all([
     db.query.lists.findFirst({
-      where: eq(lists.position, oldPosition)
-    }),
-    db.query.lists.findFirst({
-      where: eq(lists.position, newPosition)
+      where: and(
+        eq(lists.userId, userId),
+        eq(lists.position, oldPosition)
+      )
     })
   ])
 
-  if (!oldList || !newList) throw new Error('Cannot find lists in db')
+  if (!targetList) throw new Error('updateListPosition() failed: could not find target list in db')
   
   try{
     await db.transaction(async (tx) => {
-      // Update active list's position to the target position
+      // Update target list's position to the new position
       await tx.update(lists)
         .set({ position: newPosition })
-        .where(eq(lists.position, oldPosition));
+        .where(and(
+          eq(lists.position, oldPosition),
+          eq(lists.userId, userId)
+        ));
 
       if (oldPosition > newPosition) {
         // Moving up: increment positions between newList.position and original position - 1
         await tx.update(lists)
           .set({ position: sql`${lists.position} + 1` })
           .where(and(
-            ne(lists.id, oldList.id),
+            eq(lists.userId, userId),
+            ne(lists.id, targetList.id),
             gte(lists.position, newPosition),
             lt(lists.position, oldPosition)
           ));
@@ -105,14 +109,15 @@ export async function updateListPosition({
         await tx.update(lists)
           .set({ position: sql`${lists.position} - 1` })
           .where(and(
-            ne(lists.id, oldList.id),
+            eq(lists.userId, userId),
+            ne(lists.id, targetList.id),
             gt(lists.position, oldPosition),
             lte(lists.position, newPosition)
           ));
       }
     });
   }catch(error){
-    throw new Error('Could not update list positions in db')
+    throw new Error('updateListPosition() failed: could not update list positions in db')
   }
   // revalidatePath("/dashboard");
 }

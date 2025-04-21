@@ -45,6 +45,7 @@ export function TodoLists({
         // (using await will freeze the page?? no, will only freeze the async function)
         // (however, if the page.tsx is closest async function, the page will freeze)
         updateListPosition({
+          userId: userId,
           oldPosition: oldIndex,
           newPosition: newIndex,
         }).catch((error) => {
