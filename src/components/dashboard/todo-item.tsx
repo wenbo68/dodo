@@ -1,19 +1,46 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { set } from "zod";
-import { updateItemIsComplete } from "~/lib/db/item-actions";
+import {
+  updateItemDescription,
+  updateItemIsComplete,
+} from "~/lib/db/item-actions";
 import { itemMutex } from "~/lib/utils/item-mutex";
 import throttle from "~/lib/utils/throttle";
 import { ItemView } from "~/types";
 
-export default function TodoItem({ 
-  item, 
+export default function TodoItem({
+  item,
   userId,
-}: { 
-  item: ItemView; 
+  handleDeleteItem,
+}: {
+  item: ItemView;
   userId: string;
+  handleDeleteItem: (itemId: number, itemPosition: number) => void;
 }) {
   const [isComplete, setIsComplete] = useState(item.isComplete);
-  const [isDisabled, setIsDisabled] = useState(false);
+  const [description, setDescription] = useState(item.description);
+
+  const [isCheckboxDisabled, setIsCheckboxDisabled] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for the textarea
+
+  // Function to adjust textarea height
+  const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
+    if (element) {
+      // element.style.height = 'auto'; // Reset height to recalculate scrollHeight
+      element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
+      element.style.height = `${element.scrollHeight}px`; // Set height based on content
+    }
+  };
+
+  // Adjust height when editing starts or description changes programmatically
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      adjustTextareaHeight(textareaRef.current);
+      textareaRef.current.focus(); // Keep autoFocus behavior
+    }
+  }, [isEditing, description]); // Rerun when editing starts or description changes
 
   // // Throttled version of the update function
   // const throttledUpdate = throttle(async (itemId: number, newIsComplete: boolean) => {
@@ -30,7 +57,6 @@ export default function TodoItem({
   // }, 1000); // Throttle updates to once every 1000ms
 
   const handleCheckboxChange = async () => {
-    console.log("handling checkbox change");
     const newIsComplete = !isComplete;
     setIsComplete(newIsComplete); // Optimistically update the UI
     // throttledUpdate(item.id!, newIsComplete)
@@ -43,31 +69,52 @@ export default function TodoItem({
     //   console.log("checkbox enabled");
     // }, 1000);
 
-    console.log(`updating Item${item.id!} in db`);
-    setIsDisabled(true);
-    updateItemIsComplete(userId, item.id!, newIsComplete)
-      .then(() => {
-        console.log(`updated Item${item.id!} in db`);
-      })
-      .catch(error => {
-        setIsComplete(!newIsComplete); // Revert the UI if the update fails
-        console.error("throttledUpdate() failed:", error);
-        throw new Error("throttledUpdate() failed: " + String(error));
-      })
-      .finally(() => {
-        setIsDisabled(false); // Re-enable the checkbox
-        console.log("checkbox enabled");
-      });
+    setIsCheckboxDisabled(true);
+    try {
+      await updateItemIsComplete(userId, item.id!, newIsComplete);
+    } catch (error) {
+      setIsComplete(!newIsComplete); // Revert the UI if the update fails
+      console.error("throttledUpdate() failed:", error);
+      throw new Error("throttledUpdate() failed: " + String(error));
+    } finally {
+      setIsCheckboxDisabled(false); // Re-enable the checkbox
+    }
+  };
+
+  const handleItemDescriptionClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleItemDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    setDescription(e.target.value);
+  };
+
+  //only make the function async if you need to await something in backend
+  const handleItemDescriptionBlur = async () => {
+    setIsEditing(false);
+    if (description !== item.description) {
+      try {
+        // Call your update description API here
+        await updateItemDescription(item.id!, description);
+      } catch (error) {
+        console.error("handleDescriptionBlur failed: ", error);
+        setDescription(item.description); // revert on error
+      }
+    }
+  };
+
+  const handleItemDescriptionKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      (e.target as HTMLInputElement).blur();
+    }
   };
 
   return (
-    <li
-      // key={item.id ?? item.tempId}
-      className="flex gap-1 py-1 border-b border-gray-100 last:border-0"
-      // data-id={item.id}
-    >
+    <li className="group flex gap-1 border-b border-gray-100 py-1 last:border-0">
       {/* Item handle */}
-      <div className="text-gray-400 cursor-move item-drag-handle hover:text-gray-600">
+      <div className="item-drag-handle h-4 w-4 cursor-move">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -78,7 +125,7 @@ export default function TodoItem({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-gray-500 hover:text-gray-700"
+          className="text-gray-500 hover:text-gray-950"
         >
           <line x1="8" y1="6" x2="21" y2="6" />
           <line x1="8" y1="12" x2="21" y2="12" />
@@ -91,19 +138,37 @@ export default function TodoItem({
       {/* Item checkbox */}
       <input
         type="checkbox"
-        id={`item-${item.id}`}
-        className="flex-shrink-0 w-4 h-4 text-blue-600 border-gray-300 rounded peer focus:ring-blue-500"
+        className="peer h-4 w-4 flex-shrink-0 rounded"
         checked={isComplete}
         onChange={handleCheckboxChange}
-        disabled={isDisabled}
+        disabled={isCheckboxDisabled}
       />
-      {/* Item description */}
-      <label
-        htmlFor={`item-${item.id}`}
-        className="flex-1 overflow-hidden text-sm font-medium leading-normal break-words whitespace-normal peer-checked:line-through peer-checked:text-gray-400"
+      {/* Item description: becomes textarea when editing*/}
+      {isEditing ? (
+        <textarea
+          ref={textareaRef} // Attach the ref
+          value={description}
+          onChange={handleItemDescriptionChange}
+          onBlur={handleItemDescriptionBlur}
+          onKeyDown={handleItemDescriptionKeyDown}
+          className="flex-1 resize-none overflow-hidden text-sm font-medium" // Added overflow-hidden and styling
+          rows={1} // Start with one row
+          // autoFocus // autoFocus is handled by useEffect now
+        />
+      ) : (
+        <label
+          onClick={handleItemDescriptionClick}
+          className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-sm font-medium ${isComplete && description !== "" ? "text-gray-400 line-through" : ""}`}
+        >
+          {description === "" ? " " : description}
+        </label>
+      )}
+      <button
+        onClick={() => handleDeleteItem(item.id!, item.position)}
+        className="h-5 text-xs text-gray-600 opacity-0 transition-opacity hover:text-gray-950 group-hover:opacity-100"
       >
-        {item.description}
-      </label>
+        X
+      </button>
     </li>
   );
 }
