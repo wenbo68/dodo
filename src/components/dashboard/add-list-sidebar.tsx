@@ -18,7 +18,7 @@ export default function AddListSidebar({
     <div
       className={`fixed left-0 top-0 h-full w-72 transition-transform duration-300 ${
         isOpen ? "translate-x-0" : "-translate-x-72"
-      } z-50 rounded-lg bg-white p-3 shadow-lg`}
+      } rounded-lg bg-white p-3 shadow-lg`}
     >
       <AddListForm userId={userId} onSubmit={onSubmit} setIsOpen={setIsOpen} />
     </div>

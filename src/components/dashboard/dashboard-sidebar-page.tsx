@@ -74,15 +74,6 @@ export default function DashboardSidebarPage({
     <AddListContext.Provider
       value={{ isOpen, userId, listsWithItemsView, setListsWithItems }}
     >
-      {/* add list button */}
-      <button
-        onClick={() => {
-          setIsOpen(true);
-          console.log(isOpen);
-        }}
-      >
-        Add List
-      </button>
       {/* sidebar + page.tsx: side by side */}
       {/* overflow-hidden will hide the scrollbar */}
       <div className="flex overflow-hidden">

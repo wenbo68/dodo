@@ -1,27 +1,47 @@
 "use client";
 
-import { ItemView, ListWithItemsView } from "@/types";
+import { ListWithItemsView } from "@/types";
 import TodoItem from "./todo-item";
 import { useEffect, useRef, useState } from "react";
-import { it } from "node:test";
 import { deleteItem } from "@/lib/db/item-actions";
-import { set } from "zod";
 import { updateListTitle } from "@/lib/db/list-actions";
+import { TiPinOutline } from "react-icons/ti";
+import { MdOutlinePlaylistAdd, MdOutlineEditNote } from "react-icons/md";
+import { RxTrash } from "react-icons/rx";
 
 export default function TodoList({
   list,
   userId,
   setItemsRef,
+  position: positionProp,
+  handleDeleteList,
 }: {
   list: ListWithItemsView;
   userId: string;
   setItemsRef: (element: HTMLUListElement | null, listId: string) => void;
+  position: number;
+  handleDeleteList: (listId: number) => void;
 }) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(list.title);
   const [items, setItems] = useState(list.items);
+  //is adding a new item?
+  const [isAdding, setIsAdding] = useState({ status: false, tempId: "" });
+  const [position, setPosition] = useState(positionProp);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setPosition(positionProp);
+  }, [positionProp]);
+
+  // Adjust height when editing starts or description changes programmatically
+  useEffect(() => {
+    if (isEditingTitle && textareaRef.current) {
+      adjustTextareaHeight(textareaRef.current);
+      textareaRef.current.focus(); // Keep autoFocus behavior
+    }
+  }, [isEditingTitle, title]); // Rerun when editing starts or description changes
 
   // Function to adjust textarea height
   const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
@@ -32,13 +52,24 @@ export default function TodoList({
     }
   };
 
-  // Adjust height when editing starts or description changes programmatically
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      adjustTextareaHeight(textareaRef.current);
-      textareaRef.current.focus(); // Keep autoFocus behavior
-    }
-  }, [isEditing, title]); // Rerun when editing starts or description changes
+  // Handler for Add Item button
+  const handleAddItem = () => {
+    // Add a blank temp item to the list
+    const tempId = `temp-${Date.now()}`;
+    setItems((prev) => [
+      ...prev,
+      {
+        tempId,
+        description: "",
+        isComplete: false,
+        position: prev.length,
+        userId,
+        listId: list.id,
+      },
+    ]);
+    setIsAdding({ status: true, tempId });
+    console.log("handleAddItem() called");
+  };
 
   const handleDeleteItem = async (itemId: number, itemPosition: number) => {
     // Find the index and item before deleting
@@ -63,7 +94,7 @@ export default function TodoList({
   };
 
   const handleListTitleClick = () => {
-    setIsEditing(true);
+    setIsEditingTitle(true);
   };
 
   const handleListTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -71,7 +102,7 @@ export default function TodoList({
   };
 
   const handleListTitleBlur = async () => {
-    setIsEditing(false);
+    setIsEditingTitle(false);
     if (title !== list.title) {
       try {
         // Call your update description API here
@@ -89,14 +120,18 @@ export default function TodoList({
     }
   };
 
+  const handleEditList = () => {
+    // Handle edit list logic here
+  };
+
   return (
     <div
       key={list.id ?? list.tempId}
-      className="relative flex min-w-[250px] flex-col rounded-lg border bg-white p-3 shadow-lg"
+      className="group/list relative flex min-w-[250px] flex-col rounded-lg border bg-white p-3 shadow-lg"
     >
       <div className="mb-1 flex justify-between">
         {/* list title: becomes textarea when editing */}
-        {isEditing ? (
+        {isEditingTitle ? (
           <textarea
             ref={textareaRef} // Attach the ref
             value={title}
@@ -105,20 +140,13 @@ export default function TodoList({
             onKeyDown={handleListTitleKeyDown}
             className="flex-1 resize-none overflow-hidden text-xl font-bold" // Added overflow-hidden and styling
             rows={1} // Start with one row
-            // autoFocus // autoFocus is handled by useEffect now
           />
         ) : (
-          // <h3
-          //   onClick={handleListTitleClick}
-          //   className="flex-1 overflow-hidden whitespace-pre-wrap break-words text-lg font-semibold"
-          // >
-          //   {list.title}
-          // </h3>
           <label
             onClick={handleListTitleClick}
-            className="flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold"
+            className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold ${title === "" ? "text-gray-300" : ""}`}
           >
-            {title}
+            {title === "" ? `List_${position + 1}` : title}
           </label>
         )}
 
@@ -151,16 +179,32 @@ export default function TodoList({
             key={item.id ?? item.tempId}
             item={item}
             userId={userId}
+            listId={list.id!}
             handleDeleteItem={handleDeleteItem}
+            isNew={
+              isAdding.status && item.tempId && isAdding.tempId === item.tempId
+                ? true
+                : false
+            }
+            setIsAdding={setIsAdding}
           />
         ))}
       </ul>
+      {/* pin item button */}
+      <button>
+        <TiPinOutline className="absolute -top-4 left-[12.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-100 opacity-0 transition-opacity group-hover/list:opacity-100" />
+      </button>
+      {/* edit item button */}
+      <button onClick={() => handleEditList()}>
+        <MdOutlineEditNote className="absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-100 opacity-0 transition-opacity group-hover/list:opacity-100" />
+      </button>
       {/* add item button */}
-      <button
-        onClick={() => {}}
-        className="absolute -bottom-3 w-16 rounded-lg bg-gray-200 text-sm"
-      >
-        Add Item
+      <button onClick={() => handleAddItem()}>
+        <MdOutlinePlaylistAdd className="absolute -top-4 left-[62.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-100 opacity-0 transition-opacity group-hover/list:opacity-100" />
+      </button>
+      {/* delete item button */}
+      <button onClick={() => handleDeleteList(list.id!)}>
+        <RxTrash className="absolute -top-4 left-[87.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-100 opacity-0 transition-opacity group-hover/list:opacity-100" />
       </button>
     </div>
   );

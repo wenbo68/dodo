@@ -1,14 +1,67 @@
 "use server";
 import { and, eq, ne, gte, lt, gt, lte, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { db } from "~/server/db";
-import { items, lists } from "~/server/db/schema";
+import { items } from "~/server/db/schema";
 import { userMutex } from "../utils/user-mutex";
 import { itemMutex } from "../utils/item-mutex";
 
-export async function deleteItem(itemId: number) {
+export async function addItem(
+  userId: string,
+  listId: number,
+  description: string,
+  isComplete: boolean,
+  position: number,
+): Promise<number> {
+  let newItem;
   try {
-    await db.delete(items).where(eq(items.id, itemId));
+    newItem = await db
+      .insert(items)
+      .values({
+        listId,
+        description: description,
+        isComplete: isComplete,
+        position: position,
+      })
+      .returning({ id: items.id });
+  } catch (error) {
+    throw new Error("addItem() failed: " + String(error));
+  } finally {
+    if (newItem) {
+      return newItem![0].id;
+    }
+    throw new Error("addItem() failed: could not get new item id");
+  }
+}
+
+export async function deleteItem(itemId: number) {
+  //find target item to be deleted
+  const [targetItem] = await Promise.all([
+    db.query.items.findFirst({
+      where: eq(items.id, itemId),
+    }),
+  ]);
+  if (!targetItem)
+    throw new Error(
+      "updateItemPosition() failed: could not find target item in db",
+    );
+
+  try {
+    await db.transaction(async (tx) => {
+      // Delete the item
+      await tx.delete(items).where(eq(items.id, itemId));
+
+      // Update positions of items below the deleted item
+      await tx
+        .update(items)
+        .set({ position: sql`${items.position} - 1` })
+        .where(
+          and(
+            eq(items.listId, targetItem.listId),
+            gt(items.position, targetItem.position),
+          ),
+        );
+    });
+    // await tx.delete(items).where(eq(items.id, itemId));
   } catch (error) {
     throw new Error("deleteItem() failed: " + String(error));
   }
@@ -40,6 +93,10 @@ export async function updateItemIsComplete(
 
   //is this needed? the item checkbox is disabled while updating now...
   const itemRelease = await itemMutex.acquire(itemId);
+
+  console.log(newIsComplete);
+  console.log(itemId);
+  console.log(userId);
 
   try {
     await db
