@@ -133,6 +133,5 @@ This project is open-source and available under the MIT License. Feel free to us
 
 # Future Modifications
 
-## Move sortable.js for items from grid to list
-
-## use queue instead of lock/mutex
+1. Move sortable.js for items from grid to list
+2. use queue instead of lock/mutex
