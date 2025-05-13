@@ -7,6 +7,20 @@ import { and, eq, gt, gte, lt, lte, ne, sql } from "drizzle-orm";
 import { ListWithItemsView } from "~/types";
 import { userMutex } from "../utils/user-mutex";
 
+export async function deleteList(listId: number) {
+  try {
+    await db.transaction(async (tx) => {
+      // Delete all items associated with the list
+      await tx.delete(items).where(eq(items.listId, listId));
+      // Delete the list itself
+      await tx.delete(lists).where(eq(lists.id, listId));
+    });
+  } catch (error) {
+    throw new Error("deleteList() failed: " + String(error));
+  }
+  // revalidatePath("/dashboard");
+}
+
 export async function updateListTitle(listId: number, newTitle: string) {
   try {
     await db.update(lists).set({ title: newTitle }).where(eq(lists.id, listId));

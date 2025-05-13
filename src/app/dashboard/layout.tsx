@@ -4,6 +4,7 @@ import DashboardSidebarPage from "@/components/dashboard/dashboard-sidebar-page"
 import { getListsWithItems } from "~/lib/db/list-utils";
 import { auth, signOut } from "~/server/auth";
 import { ListWithItems, ListWithItemsView } from "~/types";
+import AddListButton from "@/components/dashboard/add-list-button";
 
 export default async function Layout({
   children,
@@ -38,16 +39,20 @@ export default async function Layout({
   );
 
   return (
-    <div className="min-h-screen">
-      {/* sign out button */}
-      <form
-        action={async () => {
-          "use server";
-          await signOut({ redirectTo: "/api/auth/signin" });
-        }}
-      >
-        <button>Sign Out</button>
-      </form>
+    <div className="flex min-h-screen flex-col gap-1">
+      <div className="flex gap-1">
+        {/* sign out button */}
+        <button
+          className="w-20 rounded-lg border shadow-md"
+          onClick={async () => {
+            "use server";
+            await signOut({ redirectTo: "/api/auth/signin" });
+          }}
+        >
+          Sign Out
+        </button>
+      </div>
+
       {/* use a wrapper comp here to contain page.tsx
       because this layout.tsx needs to be server comp, as it is using auth() */}
       <DashboardSidebarPage

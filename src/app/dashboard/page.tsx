@@ -27,7 +27,7 @@ export default function Page() {
     <main
       className={`grow overflow-y-auto transition-transform duration-300 ${isOpen ? "mr-72 translate-x-72" : "translate-x-0"}`}
     >
-      <div className="flex items-center justify-center px-10 pb-10">
+      <div className="flex items-center justify-center px-10 pb-10 pt-4">
         <Suspense
           fallback={Array.from({ length: 5 }).map((_, i) => (
             <div
@@ -36,11 +36,7 @@ export default function Page() {
             />
           ))}
         >
-          <TodoGrid
-            isOpen={isOpen}
-            userId={userId}
-            listsWithItemsView={listsWithItemsView}
-          />
+          <TodoGrid userId={userId} listsWithItemsView={listsWithItemsView} />
         </Suspense>
       </div>
     </main>
