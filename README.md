@@ -130,3 +130,9 @@ Join our community discussions on GitHub to share ideas, ask questions, or sugge
 ## License
 
 This project is open-source and available under the MIT License. Feel free to use, modify, and distribute it for personal or commercial projects.
+
+# Future Modifications
+
+## Move sortable.js for items from grid to list
+
+## use queue instead of lock/mutex
