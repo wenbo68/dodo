@@ -11,19 +11,26 @@ export default function DashboardSidebarPage({
   children,
   userId,
   listsWithItemsView: initialView,
+  pinnedListsWithItemsView: initialPinnedView,
 }: {
   children: React.ReactNode;
   userId: string;
   listsWithItemsView: ListWithItemsView[];
+  pinnedListsWithItemsView: ListWithItemsView[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   //need to use state to update optimistically
   const [listsWithItemsView, setListsWithItems] = useState(initialView);
+  const [pinnedListsWithItemsView, setPinnedListsWithItems] =
+    useState(initialPinnedView);
 
   // Sync state with prop updates
   useEffect(() => {
     setListsWithItems(initialView);
   }, [initialView]);
+  useEffect(() => {
+    setPinnedListsWithItems(initialPinnedView);
+  }, [initialPinnedView]);
 
   async function onSubmit(values: z.infer<typeof listFormSchema>) {
     // Use a temporary id so React can key the new list in the page that displays all todo lists
@@ -72,7 +79,14 @@ export default function DashboardSidebarPage({
 
   return (
     <AddListContext.Provider
-      value={{ isOpen, userId, listsWithItemsView, setListsWithItems }}
+      value={{
+        isOpen,
+        userId,
+        listsWithItemsView,
+        setListsWithItems,
+        pinnedListsWithItemsView,
+        setPinnedListsWithItems,
+      }}
     >
       {/* sidebar + page.tsx: side by side */}
       {/* overflow-hidden will hide the scrollbar */}

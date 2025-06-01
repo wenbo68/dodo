@@ -1,4 +1,4 @@
-import { InferSelectModel, relations, sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -17,42 +17,51 @@ import { type AdapterAccount } from "next-auth/adapters";
  *
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const createTable = pgTableCreator((name) => `t3-trial1-postgres_${name}`);
-
+export const createTable = pgTableCreator(
+  (name) => `t3-trial1-postgres_${name}`,
+);
 
 export const lists = createTable(
   "list",
   {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => users.id),
-    title: varchar("title", { length: 255 }).notNull(),
+    title: text("title").notNull(),
     position: integer("position").default(0).notNull(),
+    isPinned: boolean("is_pinned").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$onUpdate(() => new Date())
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
   },
   (table) => ({
     userIdIdx: index("list_user_id_idx").on(table.userId),
-  })
+  }),
 );
 
 export const listsRelations = relations(lists, ({ one, many }) => ({
   user: one(users, {
     fields: [lists.userId],
-    references: [users.id]
+    references: [users.id],
   }),
-  items: many(items)
+  items: many(items),
 }));
 
 export const items = createTable(
   "item",
   {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    listId: integer("list_id")
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    listId: varchar("list_id", { length: 255 })
       .notNull()
       .references(() => lists.id),
     description: text("description").notNull(),
@@ -61,18 +70,19 @@ export const items = createTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$onUpdate(() => new Date())
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
   },
   (table) => ({
     listIdIdx: index("item_list_id_idx").on(table.listId),
-  })
+  }),
 );
 
 export const itemsRelations = relations(items, ({ one }) => ({
   list: one(lists, {
     fields: [items.listId],
-    references: [lists.id]
+    references: [lists.id],
   }),
 }));
 
@@ -121,7 +131,7 @@ export const accounts = createTable(
       columns: [account.provider, account.providerAccountId],
     }),
     userIdIdx: index("account_user_id_idx").on(account.userId),
-  })
+  }),
 );
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -144,7 +154,7 @@ export const sessions = createTable(
   },
   (session) => ({
     userIdIdx: index("session_user_id_idx").on(session.userId),
-  })
+  }),
 );
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -163,5 +173,5 @@ export const verificationTokens = createTable(
   },
   (vt) => ({
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  })
+  }),
 );

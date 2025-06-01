@@ -2,38 +2,62 @@
 import { and, eq, ne, gte, lt, gt, lte, sql } from "drizzle-orm";
 import { db } from "~/server/db";
 import { items } from "~/server/db/schema";
-import { userMutex } from "../utils/user-mutex";
-import { itemMutex } from "../utils/item-mutex";
+import { Item } from "@/types";
 
-export async function addItem(
-  userId: string,
-  listId: number,
-  description: string,
-  isComplete: boolean,
-  position: number,
-): Promise<number> {
-  let newItem;
+export async function addItem(itemProp: Item): Promise<string> {
+  if (itemProp.position < 0)
+    throw new Error("addItem() failed: item position cannot be less than 0");
   try {
-    newItem = await db
+    const [newList] = await db
       .insert(items)
       .values({
-        listId,
-        description: description,
-        isComplete: isComplete,
-        position: position,
+        id: itemProp.id,
+        listId: itemProp.listId,
+        description: itemProp.description,
+        isComplete: itemProp.isComplete,
+        position: itemProp.position,
       })
-      .returning({ id: items.id });
+      .returning();
+    return newList.id;
   } catch (error) {
     throw new Error("addItem() failed: " + String(error));
-  } finally {
-    if (newItem) {
-      return newItem![0].id;
-    }
-    throw new Error("addItem() failed: could not get new item id");
   }
 }
 
-export async function deleteItem(itemId: number) {
+export async function updateItem(itemProp: Item) {
+  //find target item to be updated
+  const [targetItem] = await Promise.all([
+    db.query.items.findFirst({
+      where: eq(items.id, itemProp.id),
+    }),
+  ]);
+  if (!targetItem)
+    throw new Error("updateItem() failed: could not find target item in db");
+
+  try {
+    if (itemProp.isComplete !== targetItem.isComplete) {
+      updateItemIsComplete(itemProp.id, itemProp.isComplete);
+    }
+    if (itemProp.description !== targetItem.description) {
+      updateItemDescription(itemProp.id, itemProp.description);
+    }
+    if (
+      itemProp.position !== targetItem.position ||
+      itemProp.listId !== targetItem.listId
+    ) {
+      updateItemPositionAndListId(
+        targetItem.listId,
+        itemProp.listId,
+        targetItem.position,
+        itemProp.position,
+      );
+    }
+  } catch (error) {
+    throw new Error("updateItem() failed: " + String(error));
+  }
+}
+
+export async function deleteItem(itemId: string) {
   //find target item to be deleted
   const [targetItem] = await Promise.all([
     db.query.items.findFirst({
@@ -41,16 +65,14 @@ export async function deleteItem(itemId: number) {
     }),
   ]);
   if (!targetItem)
-    throw new Error(
-      "updateItemPosition() failed: could not find target item in db",
-    );
+    throw new Error("deleteItem() failed: could not find target item in db");
 
   try {
     await db.transaction(async (tx) => {
       // Delete the item
       await tx.delete(items).where(eq(items.id, itemId));
 
-      // Update positions of items below the deleted item
+      // Move up: Update positions of items below the deleted item to fill the gap
       await tx
         .update(items)
         .set({ position: sql`${items.position} - 1` })
@@ -68,7 +90,7 @@ export async function deleteItem(itemId: number) {
 }
 
 export async function updateItemDescription(
-  itemId: number,
+  itemId: string,
   newDescription: string,
 ) {
   try {
@@ -82,22 +104,9 @@ export async function updateItemDescription(
 }
 
 export async function updateItemIsComplete(
-  userId: string,
-  itemId: number,
+  itemId: string,
   newIsComplete: boolean,
 ) {
-  //use user mutex to make sure that the user will not addList and updateItem at the same time
-  //adding list creates a string as temp id but the real id must be a number
-  //therefore, needs to wait until addList finishes and returns the real id
-  const userRelease = await userMutex.acquire(userId);
-
-  //is this needed? the item checkbox is disabled while updating now...
-  const itemRelease = await itemMutex.acquire(itemId);
-
-  console.log(newIsComplete);
-  console.log(itemId);
-  console.log(userId);
-
   try {
     await db
       .update(items)
@@ -105,25 +114,18 @@ export async function updateItemIsComplete(
       .where(eq(items.id, itemId));
   } catch (error) {
     throw new Error("updateItemIsComplete() failed: " + String(error));
-  } finally {
-    itemRelease();
-    userRelease();
   }
-  // revalidatePath("/dashboard")
 }
 
-export async function updateItemPosition({
-  listId,
-  oldPosition,
-  newPosition,
-}: {
-  listId: number;
-  oldPosition: number;
-  newPosition: number;
-}) {
+export async function updateItemPositionAndListId(
+  srcListId: string,
+  destListId: string,
+  oldPosition: number,
+  newPosition: number,
+) {
   const [targetItem] = await Promise.all([
     db.query.items.findFirst({
-      where: and(eq(items.position, oldPosition), eq(items.listId, listId)),
+      where: and(eq(items.position, oldPosition), eq(items.listId, srcListId)),
     }),
   ]);
   if (!targetItem)
@@ -133,38 +135,67 @@ export async function updateItemPosition({
 
   try {
     await db.transaction(async (tx) => {
-      // Update active item's position to the target position
-      await tx
-        .update(items)
-        .set({ position: newPosition })
-        .where(and(eq(items.listId, listId), eq(items.position, oldPosition)));
+      // reordering within the same list
+      if (srcListId === destListId) {
+        const listId = srcListId;
 
-      if (oldPosition > newPosition) {
-        // Moving up: increment positions between overItem.position and original position - 1
+        // item moved up
+        if (newPosition < oldPosition) {
+          // move down items between newPosition (inclusive) and oldPosition
+          await tx
+            .update(items)
+            .set({ position: sql`${items.position} + 1` })
+            .where(
+              and(
+                eq(items.listId, listId),
+                gte(items.position, newPosition),
+                lt(items.position, oldPosition),
+              ),
+            );
+          // item moved down
+        } else if (oldPosition < newPosition) {
+          // move up items between oldPosition and newPosition (inclusive)
+          await tx
+            .update(items)
+            .set({ position: sql`${items.position} - 1` })
+            .where(
+              and(
+                eq(items.listId, listId),
+                gt(items.position, oldPosition),
+                lte(items.position, newPosition),
+              ),
+            );
+        }
+        // Update target item's position
         await tx
           .update(items)
-          .set({ position: sql`${items.position} + 1` })
-          .where(
-            and(
-              eq(items.listId, listId),
-              ne(items.id, targetItem.id),
-              gte(items.position, newPosition),
-              lt(items.position, targetItem.position),
-            ),
-          );
+          .set({ position: newPosition })
+          .where(eq(items.id, targetItem.id));
+
+        // move item to different list
       } else {
-        // Moving down: decrement positions between original position + 1 and overItem.position
+        //in src list: shift up items below oldPosition to fill in gap
         await tx
           .update(items)
           .set({ position: sql`${items.position} - 1` })
           .where(
-            and(
-              eq(items.listId, listId),
-              ne(items.id, targetItem.id),
-              gt(items.position, targetItem.position),
-              lte(items.position, newPosition),
-            ),
+            and(eq(items.listId, srcListId), gt(items.position, oldPosition)),
           );
+        //in dest list: shift down items below newPosition (inclusive) to create gap
+        await tx
+          .update(items)
+          .set({ position: sql`${items.position} + 1` })
+          .where(
+            and(eq(items.listId, destListId), gte(items.position, newPosition)),
+          );
+        //update the target item's listId and position
+        await tx
+          .update(items)
+          .set({
+            listId: destListId,
+            position: newPosition,
+          })
+          .where(eq(items.id, targetItem.id));
       }
     });
   } catch (error) {

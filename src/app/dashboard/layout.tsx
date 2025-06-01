@@ -1,16 +1,30 @@
 import Link from "next/link";
-import AddList from "@/components/dashboard/add-list";
-import DashboardSidebarPage from "@/components/dashboard/dashboard-sidebar-page";
-import { getListsWithItems } from "~/lib/db/list-utils";
-import { auth, signOut } from "~/server/auth";
-import { ListWithItems, ListWithItemsView } from "~/types";
-import AddListButton from "@/components/dashboard/add-list-button";
+// import AddList from "@/components/dashboard/add-list";
+import {
+  getAllListsWithItems,
+  // getListsWithItems,
+} from "~/lib/db/list-utils";
+import { auth } from "~/server/auth";
+import { AppProvider } from "@/components/context/app-provider";
+import EditListSidebar from "@/components/dashboard/right-sidebar";
+import React from "react";
+// import AddListButton from "@/components/dashboard/add-list-button";
+// Import necessary items from TanStack Query for server-side
+import {
+  QueryClient,
+  dehydrate, // Function to dehydrate the state
+  // Use HydrationBoundary in v5+, not Hydrate
+  // Use Hydrate in v4
+  HydrationBoundary,
+} from "@tanstack/react-query";
+import Topbar from "@/components/dashboard/topbar";
 
 export default async function Layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // fetch user session
   const session = await auth(); // Your auth implementation
   if (!session)
     return (
@@ -20,47 +34,46 @@ export default async function Layout({
       </>
     );
 
-  //need to fetch from db here and pass data to page wrapper as props b/c the wrapper is client comp
-  const listsWithItems: ListWithItems[] = await getListsWithItems(
-    session.user.id,
-  );
-  //convert db data from db type to view type
-  const listsWithItemsView: ListWithItemsView[] = listsWithItems.map(
-    (list) => ({
-      id: list.id, // Use the database id
-      title: list.title,
-      items: list.items.map((item) => ({
-        id: item.id,
-        isComplete: item.isComplete,
-        description: item.description,
-        position: item.position,
-      })),
-    }),
-  );
+  // --- Server-Side Data Fetching and Prefetching ---
+
+  // 1. Create a new QueryClient instance for *this* server request
+  const queryClient = new QueryClient();
+
+  // 2. Prefetch the data using the server-side queryClient
+  // This runs the queryFn on the server and stores the result in the server-side cache
+  await queryClient.prefetchQuery({
+    queryKey: ["userLists", session.user.id], // Use the same key as you will on the client
+    queryFn: () => getAllListsWithItems(session.user.id), // Call your server data fetching function
+  });
+
+  // 3. Get the dehydrated state from the server-side queryClient
+  // This state contains the results of the prefetching
+  const dehydratedState = dehydrate(queryClient);
+
+  // 4. Pass the dehydrated state to the client-side provider
+  // This will hydrate the client-side cache with the server-side data
+
+  // --- Server-Side Data Fetching and Prefetching DONE ---
 
   return (
     <div className="flex min-h-screen flex-col gap-1">
-      <div className="flex gap-1">
-        {/* sign out button */}
-        <button
-          className="w-20 rounded-lg border shadow-md"
-          onClick={async () => {
-            "use server";
-            await signOut({ redirectTo: "/api/auth/signin" });
-          }}
-        >
-          Sign Out
-        </button>
-      </div>
-
-      {/* use a wrapper comp here to contain page.tsx
-      because this layout.tsx needs to be server comp, as it is using auth() */}
-      <DashboardSidebarPage
+      {/* Wrap the client-side provider (AppProvider) around your children and other client components.
+        Pass the dehydrated state to the provider (or directly to HydrationBoundary if the provider wraps it).
+        In v5+, the AppProvider usually renders HydrationBoundary internally,
+        and the dehydrated state is automatically picked up if done in the root layout.
+        For clarity and v4 compatibility, explicitly passing is often shown.
+      */}
+      <AppProvider
         userId={session.user.id}
-        listsWithItemsView={listsWithItemsView}
+        /* For v4: */ dehydratedState={dehydratedState}
       >
-        {children}
-      </DashboardSidebarPage>
+        {/* Client components that need data (like your page content or sidebar) 
+          will now use useQuery with the same queryKey.
+          They will find the data in the cache (hydrated from the server) instantly.*/}
+        <Topbar />
+        <EditListSidebar /> {/* Make sure EditListSidebar is 'use client' */}
+        {children} {/* Your page.tsx content */}
+      </AppProvider>
     </div>
   );
 }
