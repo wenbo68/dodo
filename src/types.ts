@@ -15,20 +15,18 @@ export const listFormSchema = z.object({
   ),
 });
 
-export type ListWithItemsView = {
-  id?: number;
-  tempId?: string;
-  title: string;
-  items: ItemView[];
-};
+// export interface ListWithItemsView {
+//   id: string;
+//   title: string;
+//   items: ItemView[];
+// }
 
-export type ItemView = {
-  id?: number;
-  tempId?: string;
-  isComplete: boolean;
-  description: string;
-  position: number;
-};
+// export type ItemView = {
+//   id: number;
+//   isComplete: boolean;
+//   description: string;
+//   position: number;
+// };
 
 export interface IMenuItem {
   text: string;

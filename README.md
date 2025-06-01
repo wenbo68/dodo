@@ -135,3 +135,15 @@ This project is open-source and available under the MIT License. Feel free to us
 
 1. Move sortable.js for items from grid to list
 2. use queue instead of lock/mutex
+3. add hierarchy to items
+4. add daisy ui (dark mode)
+5. use unique string ids for lists and items
+6. clicking refresh immediate a/f add item does not update db (remove isNew from todo-item and include handleItemBlur in todo-list?)
+7. the width of the list should have a max; the gap between the lists should be fixed horizontally
+8. add animations to lists and items
+9. toast when error occurs and optimistic update reverts
+10. add search functionality
+11. add storage for deleted lists
+12. when moving list to different grid or when moving item to different list, give option to drop or copy to new location
+13. infinite scrolling?
+14. if adding new list must be instant in frontend, we need to handle temp id before real id is available from backend. In this case, client cache will become the truth for temp list/item. However, client cache cannot survive a refresh from user. If users want the temp list/item to survive a refresh, we need indexedDB as the truth for temp list/item.

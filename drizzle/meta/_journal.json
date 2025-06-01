@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1747207265894,
+      "tag": "0000_windy_prism",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1747216978090,
+      "tag": "0001_vengeful_matthew_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747217964153,
+      "tag": "0002_fast_forge",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747391950392,
+      "tag": "0003_illegal_valkyrie",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1747488709331,
+      "tag": "0004_cultured_deathbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1747489374208,
+      "tag": "0005_fearless_lorna_dane",
+      "breakpoints": true
+    }
+  ]
+}

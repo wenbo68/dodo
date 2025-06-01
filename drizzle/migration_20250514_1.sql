@@ -1,0 +1,1 @@
+ALTER TABLE "t3-trial1-postgres_list" ALTER COLUMN "pinned_position" SET DEFAULT -1;
