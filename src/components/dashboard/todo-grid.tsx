@@ -70,11 +70,11 @@ export function TodoGrid() {
     if (!pinnedGridRef.current) return;
 
     const sortablePinned = Sortable.create(pinnedGridRef.current, {
-      group: {
-        name: "grids", // Give them the same group name
-      },
-      animation: 150,
-      ghostClass: "hidden-ghost",
+      // group: {
+      //   name: "grids", // Give them the same group name
+      // },
+      animation: 200,
+      ghostClass: "opacity-0",
       handle: ".list-drag-handle",
       onEnd: (evt) => handleListDndEnd(evt),
     });
@@ -92,11 +92,11 @@ export function TodoGrid() {
 
     // Initialize Sortable.js on the grid container for list sorting
     const sortableRegular = Sortable.create(regularGridRef.current, {
-      group: {
-        name: "grids", // Same group name as the pinned grid
-      },
-      animation: 150,
-      ghostClass: "hidden-ghost",
+      // group: {
+      //   name: "grids", // Same group name as the pinned grid
+      // },
+      animation: 200,
+      ghostClass: "opacity-0",
       handle: ".list-drag-handle",
       onEnd: (evt) => handleListDndEnd(evt),
     });
