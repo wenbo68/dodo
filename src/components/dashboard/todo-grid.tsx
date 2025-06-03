@@ -133,6 +133,9 @@ export function TodoGrid() {
           ))}
       </div>
 
+      {/* Horizontal separator */}
+      <hr className="border-t border-gray-300" />
+
       {/* grid containing regular todo lists */}
       <div
         ref={regularGridRef}
