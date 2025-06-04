@@ -13,7 +13,7 @@ export default function Page() {
     <main
       className={`overflow-y-auto transition-transform duration-300 ${isLeftSidebarOpen ? "mr-72 translate-x-72" : "translate-x-0"} ${isRightSidebarOpen ? "mr-72" : "mr-0"}`}
     >
-      <div className="px-10 pb-4 pt-4">
+      <div className="px-10 py-2">
         <TodoGrid />
       </div>
     </main>

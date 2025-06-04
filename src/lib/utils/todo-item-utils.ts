@@ -459,7 +459,7 @@ export const useItemMutations = () => {
               return oldLists;
             }
 
-            console.log("targetList: ", targetList);
+            // console.log("targetList: ", targetList);
 
             const targetItem = targetList.items.find(
               (item) => item.position === oldIndex,
