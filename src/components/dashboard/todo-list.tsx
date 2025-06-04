@@ -10,44 +10,142 @@ import { ListWithItems } from "@/types";
 import { useListMutations } from "@/lib/utils/todo-list-utils";
 import { useItemMutations } from "@/lib/utils/todo-item-utils";
 import { v4 } from "uuid";
+import { DragEvent } from "react";
+import { ItemDropIndicator } from "./drop-indicator";
+import {
+  clearIndicators,
+  getIndicators,
+  getNearestIndicator,
+  highlightIndicator,
+} from "@/lib/utils/dnd-utils";
+import { useAuth } from "../context/auth-context";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAllListsWithItems } from "@/lib/db/list-utils";
 
-// for temp list/item, the client side cache is the only source of truth
-// when updating a temp list/item, we only need to update the client cache
-// when the real id is returned, we sync the db with the client side cache for that temp list/item
-// if the syncing returns error, we remove that list/item from the client side cache
-export default function TodoList({ listProp }: { listProp: ListWithItems }) {
+export default function TodoList({
+  listProp,
+  last,
+}: {
+  listProp: ListWithItems;
+  last: boolean;
+}) {
+  // fetch requied client-side states
+  const { userId } = useAuth();
+  // fetch required client-side cache
+  const queryClient = useQueryClient();
+  const {
+    data: lists,
+    status,
+    error,
+  } = useQuery({
+    queryKey: ["lists", userId],
+    queryFn: () => getAllListsWithItems(userId),
+  });
+
+  // create component states
+  const [isEditingTitle, setIsEditingTitle] = useState(
+    listProp.id.startsWith("temp-"),
+  );
+  const [title, setTitle] = useState(listProp.title);
+  const [activeList, setActiveList] = useState<HTMLElement | null>(null);
+
+  // create required refs
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // fetch required function
   const { listTitleMutation, pinListMutation, deleteListMutation } =
     useListMutations();
   const { reorderItemsMutation, addItemMutation } = useItemMutations();
 
-  // create component states
-  const [title, setTitle] = useState(listProp.title);
+  //create required function
+  const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
+    if (element) {
+      // element.style.height = 'auto'; // Reset height to recalculate scrollHeight
+      element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
+      element.style.height = `${element.scrollHeight}px`; // Set height based on content
+    }
+  };
 
-  const handleItemDndEnd = (evt: Sortable.SortableEvent) => {
-    const itemId = evt.item.getAttribute("data-item-id");
+  const handleListTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      (e.target as HTMLInputElement).blur();
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleEditList = () => {
+    // Handle edit list logic here
+  };
+
+  const handleDragStart = (e: DragEvent, listId: string) => {
+    e.dataTransfer.setData("type", "list");
+    e.dataTransfer.setData("listId", listId);
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    if (e.dataTransfer.getData("type") !== "item") return;
+
+    e.preventDefault();
+
+    const dropListEl = e.currentTarget as HTMLElement;
+    clearIndicators(dropListEl, `[data-drop-item-id]`);
+    setActiveList(null);
+
+    // find target item info: itemId, srccListId, oldIndex
+    if (!lists) {
+      console.error("handleDrop failed: lists not found in cache");
+      return;
+    }
+    const itemId = e.dataTransfer.getData("itemId");
     if (!itemId) {
-      console.error("handleItemDndEnd failed: itemId not found");
+      console.error("handleDrop failed: itemId not found in dataTransfer");
+      return;
+    }
+    const targetItem = lists
+      .flatMap((list) => list.items)
+      .find((item) => item.id === itemId);
+    if (!targetItem) {
+      console.error("handleDrop failed: targetItem not found in cache");
+      return;
+    }
+    const srcListId = targetItem.listId;
+    const oldIndex = targetItem.position;
+
+    // find drop info (from nearest drop indicator): destListId, newIndex
+    const destListId = dropListEl.getAttribute("data-list-id");
+    if (!destListId) {
+      console.error("handleDrop failed: destListId not found");
       return;
     }
 
-    const oldIndex = evt.oldIndex;
-    const newIndex = evt.newIndex;
-    if (
-      oldIndex === undefined ||
-      oldIndex === null ||
-      newIndex === undefined ||
-      newIndex === null
-    ) {
-      console.error("handleItemDndEnd failed: index not found");
+    const indicators = getIndicators(e, `[data-drop-item-id]`);
+    let dropItemId: string | null = null;
+    const { element: nearestIndicator } = getNearestIndicator(e, indicators);
+    if (!nearestIndicator) {
+      console.error("handleDrop failed: nearestIndicator not found");
       return;
     }
-
-    const srcListId = evt.from.getAttribute("data-list-id");
-    const destListId = evt.to.getAttribute("data-list-id");
-    if (!srcListId || !destListId) {
-      console.error("handleItemDndEnd failed: src/dest listId not found");
+    dropItemId = nearestIndicator.getAttribute("data-drop-item-id");
+    if (!dropItemId) {
+      console.error("handleDrop failed: dropItemId not found");
       return;
     }
+    const dropList = lists.find((list) => list.id === destListId);
+    if (!dropList) {
+      console.error("handleDrop failed: dropList not found");
+      return;
+    }
+    let newIndex = dropList.items.length;
+    // cannot find dropItem if list length === 0
+    if (newIndex > 0 && dropItemId !== "last-indicator") {
+      const dropItem = dropList.items.find((item) => item.id === dropItemId);
+      if (!dropItem) {
+        console.error("handleDrop failed: dropItem not found in cache");
+        return;
+      }
+      newIndex = dropItem.position;
+    }
+    if (srcListId === destListId && newIndex > oldIndex) newIndex--;
 
     console.log(
       "Item moved: list",
@@ -68,21 +166,16 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
       newIndex,
     });
   };
-
-  // create component states
-  // const [isNew, setIsNew] = useState(listProp.id.startsWith("temp-"));
-  const [isEditingTitle, setIsEditingTitle] = useState(
-    listProp.id.startsWith("temp-"),
-  );
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // helper function to adjust textarea height
-  const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
-    if (element) {
-      // element.style.height = 'auto'; // Reset height to recalculate scrollHeight
-      element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
-      element.style.height = `${element.scrollHeight}px`; // Set height based on content
-    }
+  const handleDragOver = (e: DragEvent) => {
+    if (e.dataTransfer.getData("type") !== "item") return;
+    e.preventDefault();
+    highlightIndicator(e, `[data-drop-item-id]`);
+    setActiveList(e.currentTarget as HTMLElement);
+  };
+  const handleDragLeave = (e: DragEvent) => {
+    if (e.dataTransfer.getData("type") !== "item") return;
+    clearIndicators(e.currentTarget as HTMLElement, `[data-drop-item-id]`);
+    setActiveList(null);
   };
 
   // Adjust height of textbox when editing starts
@@ -92,46 +185,17 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
       adjustTextareaHeight(textareaRef.current);
       textareaRef.current.focus(); // Keep autoFocus behavior
     }
-  }, [isEditingTitle, textareaRef, adjustTextareaHeight]); // Rerun when editing starts or description changes
-
-  const listRef = useRef<HTMLUListElement>(null);
-  // sortable.js for the list
-  useEffect(() => {
-    if (!listRef.current) return;
-
-    // Initialize Sortable.js for the list
-    const sortable = Sortable.create(listRef.current, {
-      group: {
-        name: "lists", // Give them the same group name
-      },
-      animation: 150,
-      ghostClass: "hidden-ghost",
-      handle: ".item-drag-handle",
-      onEnd: (evt) => handleItemDndEnd(evt),
-    });
-
-    return () => {
-      sortable.destroy();
-    };
-  }, [listRef, handleItemDndEnd, listProp]);
-
-  const handleListTitleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      (e.target as HTMLInputElement).blur();
-      setIsEditingTitle(false);
-    }
-  };
-
-  const handleEditList = () => {
-    // Handle edit list logic here
-  };
+  }, [isEditingTitle, textareaRef, adjustTextareaHeight]);
 
   return (
     <div
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       data-list-id={listProp.id}
-      className="group/list relative flex min-w-[250px] flex-col rounded-lg border bg-white p-3 shadow-lg"
+      className={`group/list relative my-1 flex min-w-[250px] flex-col rounded-lg border-2 p-3 shadow-lg ${activeList?.getAttribute("data-list-id") === listProp.id ? "border-blue-500 bg-blue-50" : "bg-white"}`}
     >
-      <div className="mb-1 flex justify-between">
+      <div className="flex justify-between">
         {/* list title: becomes textarea when editing */}
         {isEditingTitle ? (
           <textarea
@@ -165,7 +229,11 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
         )}
 
         {/* list handle */}
-        <div className="list-drag-handle cursor-move">
+        <div
+          draggable="true"
+          onDragStart={(e) => handleDragStart(e, listProp.id)}
+          className="list-drag-handle cursor-move"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -186,11 +254,20 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
         </div>
       </div>
       {/* all items */}
-      <ul ref={listRef} data-list-id={listProp.id}>
+      <ul data-list-id={listProp.id}>
         {/* 1 item */}
         {listProp.items.map((item, index) => (
-          <TodoItem key={item.id} itemProp={item} />
+          <div key={item.id} className="flex flex-col">
+            <ItemDropIndicator itemId={item.id} />
+            <TodoItem itemProp={item} />
+            {index === listProp.items.length - 1 && (
+              <ItemDropIndicator itemId={"last-indicator"} />
+            )}
+          </div>
         ))}
+        {listProp.items.length === 0 && (
+          <ItemDropIndicator itemId={"empty-list"} />
+        )}
       </ul>
       {/* pin list button */}
       <button
@@ -202,12 +279,12 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
         }
       >
         <LiaMapPinSolid
-          className={`absolute -top-4 left-[12.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg transition-opacity group-hover/list:opacity-100 ${listProp.isPinned ? "bg-blue-500 text-white opacity-100" : "bg-gray-100 opacity-0"}`}
+          className={`absolute -top-4 left-[12.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg transition-opacity group-hover/list:opacity-100 ${listProp.isPinned ? "bg-blue-500 text-white opacity-100" : "bg-gray-200 opacity-0"}`}
         />
       </button>
       {/* edit list button */}
       <button onClick={() => handleEditList()}>
-        <MdOutlineEditNote className="absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-100 opacity-0 transition-opacity group-hover/list:opacity-100" />
+        <MdOutlineEditNote className="absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-200 opacity-0 transition-opacity group-hover/list:opacity-100" />
       </button>
       {/* add item button */}
       <button
@@ -225,13 +302,13 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
           })
         }
       >
-        <MdOutlinePlaylistAdd className="absolute -top-4 left-[62.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-100 opacity-0 transition-opacity group-hover/list:opacity-100" />
+        <MdOutlinePlaylistAdd className="absolute -top-4 left-[62.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-200 opacity-0 transition-opacity group-hover/list:opacity-100" />
       </button>
       {/* delete list button */}
       <button
         onClick={() => deleteListMutation.mutate({ listId: listProp.id })}
       >
-        <RxTrash className="absolute -top-4 left-[87.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-100 opacity-0 transition-opacity group-hover/list:opacity-100" />
+        <RxTrash className="absolute -top-4 left-[87.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-200 opacity-0 transition-opacity group-hover/list:opacity-100" />
       </button>
     </div>
   );

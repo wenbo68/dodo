@@ -435,7 +435,7 @@ export const useListMutations = () => {
             return a.position - b.position;
           });
 
-          console.log("targetlist new position: ", updatedTargetList.position);
+          // console.log("targetlist new position: ", updatedTargetList.position);
           return sortedLists;
         },
       );
@@ -477,8 +477,6 @@ export const useListMutations = () => {
       // save the original cache
       const originalLists = queryClient.getQueryData(["lists", userId]);
       // optimistically update the cache
-
-      // 3. Optimistically update the cache.
       queryClient.setQueryData<ListWithItems[]>(
         ["lists", userId],
         (oldLists) => {
@@ -494,7 +492,7 @@ export const useListMutations = () => {
           let updatedLists = oldLists.map((list) => {
             if (list.id === listId) {
               // Update the target list's pinned status
-              return { ...list, isPinned: newIsPinned };
+              return { ...list, isPinned: newIsPinned, position: -1 };
             }
             return list;
           });

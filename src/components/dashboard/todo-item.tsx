@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { DragEvent, useEffect, useRef, useState } from "react";
 import { Item } from "~/types";
 import { useItemMutations } from "@/lib/utils/todo-item-utils";
 
@@ -47,13 +47,19 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
     }
   };
 
+  const handleDragStart = (e: DragEvent, itemId: string) => {
+    e.dataTransfer.setData("type", "item");
+    e.dataTransfer.setData("itemId", itemId);
+  };
+
   return (
-    <li
-      data-item-id={itemProp.id}
-      className="group flex gap-1 border-b border-gray-100 py-1 last:border-0"
-    >
+    <li data-item-id={itemProp.id} className="group flex gap-1 py-1">
       {/* Item handle */}
-      <div className="item-drag-handle h-4 w-4 cursor-move">
+      <div
+        draggable="true"
+        onDragStart={(e) => handleDragStart(e, itemProp.id)}
+        className="item-drag-handle h-4 w-4 cursor-move"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
