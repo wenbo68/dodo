@@ -22,6 +22,7 @@ import { useAuth } from "../context/auth-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllListsWithItems } from "@/lib/db/list-utils";
 import { useRightSidebar } from "../context/right-sidebar-context";
+import { motion } from "framer-motion";
 
 export default function TodoList({ listProp }: { listProp: ListWithItems }) {
   // fetch requied client-side states
@@ -47,33 +48,16 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
   });
 
   // create component states
-  const [isEditingTitle, setIsEditingTitle] = useState(listProp.isNew);
   const [title, setTitle] = useState(listProp.title);
   const [activeList, setActiveList] = useState<HTMLElement | null>(null);
 
-  // create required refs
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const hasFocusedOnNew = useRef(false); // This ref is key to executing focus only once
 
   // fetch required function
   const { listTitleMutation, pinListMutation, deleteListMutation } =
     useListMutations();
   const { reorderItemsMutation, addItemMutation } = useItemMutations();
-
-  //create required function
-  const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
-    if (element) {
-      element.style.height = "auto"; // Reset height to recalculate scrollHeight
-      // element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
-      element.style.height = `${element.scrollHeight}px`; // Set height based on content
-    }
-  };
-
-  const handleListTitleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      (e.target as HTMLInputElement).blur();
-      setIsEditingTitle(false);
-    }
-  };
 
   const handleEditList = () => {
     if (listProp.id === listId) {
@@ -186,23 +170,47 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
     setActiveList(null);
   };
 
-  // sync title with prop so that it rerenders in sidebar
+  // Sync title with prop
   useEffect(() => {
     setTitle(listProp.title);
   }, [listProp.title]);
 
-  // Adjust height of textbox when editing starts
-  // or when description changes programmatically
+  // Handle initial focus for new lists only once
   useEffect(() => {
-    if (isEditingTitle && textareaRef.current) {
-      adjustTextareaHeight(textareaRef.current);
-      textareaRef.current.focus(); // Keep autoFocus behavior
-      textareaRef.current.setSelectionRange(
-        textareaRef.current.value.length,
-        textareaRef.current.value.length,
-      );
+    if (listProp.isNew && !hasFocusedOnNew.current && titleRef.current) {
+      titleRef.current.focus();
+
+      // Place cursor at the end for new titles
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(titleRef.current);
+      range.collapse(false); // Collapse to the end
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+
+      hasFocusedOnNew.current = true; // Mark that it has been focused for this new list
     }
-  }, [isEditingTitle, textareaRef, adjustTextareaHeight]);
+    // IMPORTANT: If a list *stops* being new (e.g., after saving and refetch),
+    // reset hasFocusedOnNew so if this component instance is ever reused for a *different* new list,
+    // the focus logic can run again. This is important in scenarios like a sidebar that reuses components.
+    if (!listProp.isNew && hasFocusedOnNew.current) {
+      hasFocusedOnNew.current = false;
+    }
+  }, [listProp.isNew]); // Only depend on listProp.isNew
+
+  const handleTitleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    setTitle(e.currentTarget.textContent || ""); // Update state as user types
+  };
+
+  const handleTitleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    const newTitle = e.currentTarget.textContent || "";
+    if (newTitle !== listProp.title) {
+      listTitleMutation.mutate({
+        listId: listProp.id,
+        newTitle: newTitle,
+      });
+    }
+  };
 
   return (
     <div
@@ -213,37 +221,20 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
       className={`group/list relative mb-2 flex min-w-[250px] flex-col rounded-lg border p-3 shadow-lg ${activeList?.getAttribute("data-list-id") === listProp.id ? "bg-blue-50" : "bg-white"}`}
     >
       <div className="flex justify-between">
-        {/* list title: becomes textarea when editing */}
-        {isEditingTitle ? (
-          <textarea
-            ref={textareaRef} // Attach the ref
-            value={title}
-            onBlur={(e) => {
-              setIsEditingTitle(false);
-              listTitleMutation.mutate({
-                listId: listProp.id,
-                newTitle: e.target.value,
-              });
-            }}
-            onChange={(e) => {
-              setTitle(e.target.value);
-            }}
-            onKeyDown={handleListTitleKeyDown}
-            className="flex-1 resize-none overflow-hidden text-xl font-bold" // Added overflow-hidden and styling
-            rows={1} // Start with one row
-          />
-        ) : (
-          <label
-            onClick={() => setIsEditingTitle(true)}
-            className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold ${title === "" ? "text-gray-300" : ""}`}
-          >
-            {title === ""
-              ? listProp.isPinned
-                ? `--pinned${listProp.position + 1}--`
-                : `--list${listProp.position + 1}--`
-              : title}
-          </label>
-        )}
+        <motion.div
+          ref={titleRef}
+          contentEditable="true"
+          suppressContentEditableWarning={true}
+          onInput={handleTitleInput}
+          onBlur={handleTitleBlur}
+          className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold outline-none ${title === "" ? "text-gray-300" : ""}`}
+        >
+          {/* Use `title` state here, but ensure it's not null/undefined */}
+          {title || // If title is empty string, use placeholder
+            (listProp.isPinned
+              ? `--pinned${listProp.position + 1}--`
+              : `--list${listProp.position + 1}--`)}
+        </motion.div>
 
         {/* list handle */}
         <div
