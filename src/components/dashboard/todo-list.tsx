@@ -197,10 +197,10 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
     if (isEditingTitle && textareaRef.current) {
       adjustTextareaHeight(textareaRef.current);
       textareaRef.current.focus(); // Keep autoFocus behavior
-      textareaRef.current.setSelectionRange(
-        textareaRef.current.value.length,
-        textareaRef.current.value.length,
-      );
+      // textareaRef.current.setSelectionRange(
+      //   textareaRef.current.value.length,
+      //   textareaRef.current.value.length,
+      // );
     }
   }, [isEditingTitle, textareaRef, adjustTextareaHeight]);
 
