@@ -24,7 +24,13 @@ import { getAllListsWithItems } from "@/lib/db/list-utils";
 import { useRightSidebar } from "../context/right-sidebar-context";
 import { motion } from "framer-motion";
 
-export default function TodoList({ listProp }: { listProp: ListWithItems }) {
+export default function TodoList({
+  listProp,
+  inSidebar,
+}: {
+  listProp: ListWithItems;
+  inSidebar: boolean;
+}) {
   // fetch requied client-side states
   const { userId } = useAuth();
   const {
@@ -49,10 +55,11 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
 
   // create component states
   const [title, setTitle] = useState(listProp.title);
+  const [isFocused, setIsFocused] = useState(false);
   const [activeList, setActiveList] = useState<HTMLElement | null>(null);
 
   const titleRef = useRef<HTMLDivElement>(null);
-  const hasFocusedOnNew = useRef(false); // This ref is key to executing focus only once
+  // const focusedOnce = useRef(false); // This ref is key to let a new list focus only once
 
   // fetch required function
   const { listTitleMutation, pinListMutation, deleteListMutation } =
@@ -62,7 +69,7 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
   const handleEditList = () => {
     if (listProp.id === listId) {
       toggleRightSidebar();
-      // setListId("");
+      setListId("");
     } else {
       setListId(listProp.id);
       openRightSidebar();
@@ -170,44 +177,26 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
     setActiveList(null);
   };
 
-  // Sync title with prop
+  // Sync title with prop to sync with list in sidebar
   useEffect(() => {
     setTitle(listProp.title);
   }, [listProp.title]);
 
   // Handle initial focus for new lists only once
   useEffect(() => {
-    if (listProp.isNew && !hasFocusedOnNew.current && titleRef.current) {
+    if (listProp.isNew && !inSidebar && titleRef.current) {
       titleRef.current.focus();
-
-      // Place cursor at the end for new titles
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.selectNodeContents(titleRef.current);
-      range.collapse(false); // Collapse to the end
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-
-      hasFocusedOnNew.current = true; // Mark that it has been focused for this new list
     }
-    // IMPORTANT: If a list *stops* being new (e.g., after saving and refetch),
-    // reset hasFocusedOnNew so if this component instance is ever reused for a *different* new list,
-    // the focus logic can run again. This is important in scenarios like a sidebar that reuses components.
-    if (!listProp.isNew && hasFocusedOnNew.current) {
-      hasFocusedOnNew.current = false;
-    }
-  }, [listProp.isNew]); // Only depend on listProp.isNew
-
-  const handleTitleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    setTitle(e.currentTarget.textContent || ""); // Update state as user types
-  };
+  }, [listProp.isNew, inSidebar, titleRef]);
 
   const handleTitleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
     const newTitle = e.currentTarget.textContent || "";
+    setTitle(newTitle);
+    setIsFocused(false);
     if (newTitle !== listProp.title) {
       listTitleMutation.mutate({
         listId: listProp.id,
-        newTitle: newTitle,
+        newTitle,
       });
     }
   };
@@ -225,15 +214,16 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
           ref={titleRef}
           contentEditable="true"
           suppressContentEditableWarning={true}
-          onInput={handleTitleInput}
+          onFocus={(e) => setIsFocused(true)}
+          // onInput={handleTitleInput}
           onBlur={handleTitleBlur}
-          className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold outline-none ${title === "" ? "text-gray-300" : ""}`}
+          className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold outline-none ${title === "" && !isFocused ? "text-gray-300" : ""}`}
         >
-          {/* Use `title` state here, but ensure it's not null/undefined */}
           {title || // If title is empty string, use placeholder
-            (listProp.isPinned
-              ? `--pinned${listProp.position + 1}--`
-              : `--list${listProp.position + 1}--`)}
+            (!isFocused &&
+              (listProp.isPinned
+                ? `--pinned${listProp.position + 1}--`
+                : `--list${listProp.position + 1}--`))}
         </motion.div>
 
         {/* list handle */}
@@ -267,7 +257,7 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
         {listProp.items.map((item, index) => (
           <div key={item.id} className="flex flex-col">
             <ItemDropIndicator itemId={item.id} />
-            <TodoItem itemProp={item} />
+            <TodoItem itemProp={item} inSidebar={inSidebar} />
             {index === listProp.items.length - 1 && (
               <ItemDropIndicator itemId={"last-indicator"} />
             )}
@@ -309,6 +299,7 @@ export default function TodoList({ listProp }: { listProp: ListWithItems }) {
               description: "",
               isComplete: false,
               isNew: true,
+              inSidebar,
             },
           })
         }

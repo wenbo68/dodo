@@ -14,7 +14,7 @@ export default function Page() {
     <>
       <AddListButton />
       <main
-        className={`overflow-y-auto transition-[transform,margin] duration-500 ${isLeftSidebarOpen ? "mr-72 translate-x-72" : "translate-x-0"} ${isRightSidebarOpen ? "mr-72" : "mr-0"}`}
+        className={`overflow-y-auto ${isLeftSidebarOpen ? "mr-72 translate-x-72" : "translate-x-0"} ${isRightSidebarOpen ? "mr-72" : "mr-0"}`}
       >
         <div className="px-10 py-2">
           <TodoGrid />

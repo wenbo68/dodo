@@ -3,8 +3,15 @@
 import { DragEvent, useEffect, useRef, useState } from "react";
 import { Item } from "~/types";
 import { useItemMutations } from "@/lib/utils/todo-item-utils";
+import { motion } from "framer-motion";
 
-export default function TodoItem({ itemProp }: { itemProp: Item }) {
+export default function TodoItem({
+  itemProp,
+  inSidebar,
+}: {
+  itemProp: Item;
+  inSidebar: boolean;
+}) {
   const {
     deleteItemMutation,
     itemDescriptionMutation,
@@ -13,27 +20,23 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
 
   // create component states
   const [isCheckboxDisabled, setIsCheckboxDisabled] = useState(false);
-  const [isEditingDescription, setIsEditingDescription] = useState(
-    itemProp.isNew,
-  );
+  // const [isEditingDescription, setIsEditingDescription] = useState(
+  //   itemProp.isNew && inSidebar === itemProp.inSidebar,
+  // );
   const [description, setDescription] = useState(itemProp.description);
 
-  // use ref if ui doesn't depend on the var (ie item.id isn't displayed in ui)
-  // also, state setter is always async (ie the state is not updated immediately)
-  // so if you need to use the updated state immediately after setting it, use ref
-  // using a var (via let) doesn't work
-  // because functions created before the assignment of the var will only see the old value
-
   //create required refs
-  const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for the textarea
+  // const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionRef = useRef<HTMLDivElement>(null);
 
   // create required functions
-  const handleItemDescriptionKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      (e.target as HTMLInputElement).blur();
-      setIsEditingDescription(false);
-    }
-  };
+
+  // const handleItemDescriptionKeyDown = (e: React.KeyboardEvent) => {
+  //   if (e.key === "Enter") {
+  //     (e.target as HTMLInputElement).blur();
+  //     setIsEditingDescription(false);
+  //   }
+  // };
 
   const handleDragStart = (e: DragEvent, itemId: string) => {
     e.dataTransfer.setData("type", "item");
@@ -43,7 +46,6 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
   const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
     if (element) {
       element.style.height = "auto"; // Reset height to recalculate scrollHeight
-      // element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
       element.style.height = `${element.scrollHeight}px`; // Set height based on content
     }
   };
@@ -52,15 +54,33 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
     setDescription(itemProp.description);
   }, [itemProp.description]);
 
-  // useEffect is run immediately after the rerender caused by the state change
-  // state setter called (async) -> state updates -> rerender -> useEffect runs
-  // Adjust height when editing starts or description changes programmatically
   useEffect(() => {
-    if (isEditingDescription && textareaRef.current) {
-      adjustTextareaHeight(textareaRef.current);
-      textareaRef.current.focus(); // Keep autoFocus behavior
+    if (
+      itemProp.isNew &&
+      itemProp.inSidebar === inSidebar &&
+      descriptionRef.current
+    ) {
+      descriptionRef.current.focus();
     }
-  }, [isEditingDescription, textareaRef, adjustTextareaHeight]); // Rerun when editing starts or description changes
+  }, [itemProp.isNew, itemProp.inSidebar, inSidebar, descriptionRef]);
+
+  const handleDescriptionBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    const newDescription = e.currentTarget.textContent || "";
+    setDescription(newDescription);
+    if (newDescription !== itemProp.description) {
+      itemDescriptionMutation.mutate({
+        itemId: itemProp.id,
+        newDescription,
+      });
+    }
+  };
+
+  // useEffect(() => {
+  //   if (isEditingDescription && textareaRef.current) {
+  //     adjustTextareaHeight(textareaRef.current);
+  //     textareaRef.current.focus();
+  //   }
+  // }, [isEditingDescription, textareaRef, adjustTextareaHeight]);
 
   return (
     <li data-item-id={itemProp.id} className="group flex gap-1 py-1">
@@ -96,7 +116,6 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
         className="peer h-4 w-4 flex-shrink-0 rounded"
         checked={itemProp?.isComplete ?? false}
         onChange={(e) => {
-          //disable checkbox for 500ms
           setIsCheckboxDisabled(true);
           setTimeout(() => setIsCheckboxDisabled(false), 500);
           itemIsCompleteMutation.mutate({
@@ -107,31 +126,15 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
         disabled={isCheckboxDisabled}
       />
       {/* Item description: becomes textarea when editing*/}
-      {isEditingDescription ? (
-        <textarea
-          ref={textareaRef} // Attach the ref
-          value={description}
-          onBlur={(e) => {
-            setIsEditingDescription(false);
-            itemDescriptionMutation.mutate({
-              itemId: itemProp.id,
-              newDescription: e.target.value,
-            });
-          }}
-          onChange={(e) => setDescription(e.target.value)}
-          onKeyDown={handleItemDescriptionKeyDown}
-          className="flex-1 resize-none overflow-hidden text-sm font-medium" // Added overflow-hidden and styling
-          rows={1} // Start with one row
-          // autoFocus // autoFocus is handled by useEffect now
-        />
-      ) : (
-        <label
-          onClick={() => setIsEditingDescription(true)}
-          className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-sm font-medium ${itemProp?.isComplete && description !== "" ? "text-gray-400 line-through" : ""}`}
-        >
-          {description === "" ? " " : description}
-        </label>
-      )}
+      <motion.div
+        ref={descriptionRef}
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+        onBlur={handleDescriptionBlur}
+        className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-sm font-medium outline-none ${itemProp?.isComplete && description !== "" ? "text-gray-400 line-through" : ""}`}
+      >
+        {description === "" ? " " : description}
+      </motion.div>
       <button
         onClick={() =>
           deleteItemMutation.mutate({
