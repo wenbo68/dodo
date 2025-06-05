@@ -25,9 +25,9 @@ export default function RightSidebar() {
   return (
     <div
       // ref={sidebarRef} // Attach the ref here
-      className={`fixed right-0 top-0 h-full w-72 overflow-y-auto bg-blue-50 px-3 py-7 transition-transform duration-500 ${isRightSidebarOpen ? "translate-x-0" : "translate-x-72"}`}
+      className={`fixed right-0 top-0 h-full w-72 overflow-y-auto bg-blue-50 px-3 py-7 ${isRightSidebarOpen ? "translate-x-0" : "translate-x-72"}`}
     >
-      {list && <TodoList listProp={list} />}
+      {list && <TodoList listProp={list} inSidebar={true} />}
     </div>
   );
 }
