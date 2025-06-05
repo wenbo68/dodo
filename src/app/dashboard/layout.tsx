@@ -4,9 +4,9 @@ import {
   getAllListsWithItems,
   // getListsWithItems,
 } from "~/lib/db/list-utils";
-import { auth } from "~/server/auth";
+import { auth, signIn } from "~/server/auth";
 import { AppProvider } from "@/components/context/app-provider";
-import EditListSidebar from "@/components/dashboard/right-sidebar";
+import RightSidebar from "@/components/dashboard/right-sidebar";
 import React from "react";
 // import AddListButton from "@/components/dashboard/add-list-button";
 // Import necessary items from TanStack Query for server-side
@@ -29,8 +29,9 @@ export default async function Layout({
   if (!session)
     return (
       <>
-        <p>Not Authenticated</p>
-        <Link href="/">Sign In</Link>
+        <button className="w-20 rounded-lg border shadow-md">
+          <Link href="/auth/api/signin">Sign In</Link>
+        </button>
       </>
     );
 
@@ -71,7 +72,7 @@ export default async function Layout({
           will now use useQuery with the same queryKey.
           They will find the data in the cache (hydrated from the server) instantly.*/}
         <Topbar />
-        <EditListSidebar /> {/* Make sure EditListSidebar is 'use client' */}
+        <RightSidebar /> {/* Make sure EditListSidebar is 'use client' */}
         {children} {/* Your page.tsx content */}
       </AppProvider>
     </div>

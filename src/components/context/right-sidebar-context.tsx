@@ -38,8 +38,8 @@ export const RightSidebarProvider = ({ children }: { children: ReactNode }) => {
         toggleRightSidebar: toggleSidebar,
         openRightSidebar: openSidebar,
         closeRightSidebar: closeSidebar,
-        listId: "",
-        setListId: setListId, // Provide the setListId function
+        listId,
+        setListId, // Provide the setListId function
       }}
     >
       {children}

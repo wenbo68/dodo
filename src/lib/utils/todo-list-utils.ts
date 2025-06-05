@@ -78,85 +78,6 @@ export const useListMutations = () => {
         queryKey: ["lists", userId],
       });
     },
-    // // onSuccess => the only update cache done here is replacing temp id with real id;
-    // // everything else is db write
-    // onSuccess: (realListId, listProp, context) => {
-    //   const { tempListId } = context || {};
-
-    //   // 1. Find the list in the cache (using the temporary ID from onMutate)
-    //   queryClient.setQueryData(
-    //     ["lists", userId],
-    //     (oldLists: ListWithItems[] | undefined) => {
-    //       if (!oldLists) {
-    //         console.error(
-    //           "addListMutation onSuccess failed: oldLists not found in cache",
-    //         );
-    //         return oldLists;
-    //       }
-
-    //       // Find the optimistic list by its temporary ID
-    //       const targetList = oldLists.find((list) => list.id === tempListId);
-
-    //       // 2. If the list is gone from the cache (e.g., user deleted it optimistically
-    //       //    before the server response came back, or another mutation removed it),
-    //       //    then delete the list in the DB.
-    //       if (!targetList) {
-    //         deleteListMutation.mutate({
-    //           listId: realListId,
-    //           updateCache: false,
-    //         });
-    //         return oldLists; // Return oldLists as id cannot be updated
-    //       }
-
-    //       // 3. If the list is still there, update the list in cache to have the real ID
-    //       return oldLists.map((list) =>
-    //         list.id === tempListId
-    //           ? {
-    //               ...list,
-    //               id: realListId,
-    //               items: list.items.map((item) => {
-    //                 return {
-    //                   ...item,
-    //                   listId: realListId,
-    //                 };
-    //               }),
-    //             }
-    //           : list,
-    //       );
-    //     },
-    //   );
-
-    //   // find target list in cache (now using the real id)
-    //   const targetList = queryClient
-    //     .getQueryData<ListWithItems[]>(["lists", userId])
-    //     ?.find((list) => list.id === realListId);
-    //   if (!targetList) {
-    //     console.error(
-    //       "addListMutation onSuccess failed: targetList not found in cache",
-    //     );
-    //     return;
-    //   }
-
-    //   // 4. Then do db write for title, position/isPinned
-    //   // if there are differences btw listProp (synced with db) and current cache (not synced yet)
-    //   updateListMutation.mutate({ ...targetList, items: [] });
-
-    //   // 5. Then do db write for items
-    //   if (targetList.items.length > 0) {
-    //     targetList.items.forEach((item: Item) => {
-    //       // if item is temp => add it to db
-    //       // if item is real (moved from real list to here) => update it in db
-    //       if (item.id.startsWith("temp-")) {
-    //         addItemMutation.mutate({
-    //           itemProp: item,
-    //           updateCache: false,
-    //         });
-    //       } else {
-    //         updateItemMutation.mutate(item);
-    //       }
-    //     });
-    //   }
-    // },
   });
 
   const updateListMutation = useMutation({
@@ -169,10 +90,6 @@ export const useListMutations = () => {
     },
   });
 
-  // updateCache is needed to create the following scenarios:
-  // 1. delete list in cache and db (if listId is real)
-  // 2. delete list in cache only (if listId is temp)
-  // 3. delete list in db only (to sync cache and db after realListId is returned)
   const deleteListMutation = useMutation({
     mutationFn: async ({ listId }: { listId: string }) => {
       await deleteList(listId);

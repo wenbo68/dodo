@@ -21,16 +21,20 @@ import {
 import { useAuth } from "../context/auth-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllListsWithItems } from "@/lib/db/list-utils";
+import { useRightSidebar } from "../context/right-sidebar-context";
 
-export default function TodoList({
-  listProp,
-  last,
-}: {
-  listProp: ListWithItems;
-  last: boolean;
-}) {
+export default function TodoList({ listProp }: { listProp: ListWithItems }) {
   // fetch requied client-side states
   const { userId } = useAuth();
+  const {
+    isRightSidebarOpen,
+    toggleRightSidebar,
+    closeRightSidebar,
+    openRightSidebar,
+    listId,
+    setListId,
+  } = useRightSidebar();
+
   // fetch required client-side cache
   const queryClient = useQueryClient();
   const {
@@ -43,9 +47,7 @@ export default function TodoList({
   });
 
   // create component states
-  const [isEditingTitle, setIsEditingTitle] = useState(
-    listProp.id.startsWith("temp-"),
-  );
+  const [isEditingTitle, setIsEditingTitle] = useState(listProp.isNew);
   const [title, setTitle] = useState(listProp.title);
   const [activeList, setActiveList] = useState<HTMLElement | null>(null);
 
@@ -60,8 +62,8 @@ export default function TodoList({
   //create required function
   const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
     if (element) {
-      // element.style.height = 'auto'; // Reset height to recalculate scrollHeight
-      element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
+      element.style.height = "auto"; // Reset height to recalculate scrollHeight
+      // element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
       element.style.height = `${element.scrollHeight}px`; // Set height based on content
     }
   };
@@ -74,7 +76,13 @@ export default function TodoList({
   };
 
   const handleEditList = () => {
-    // Handle edit list logic here
+    if (listProp.id === listId) {
+      toggleRightSidebar();
+      // setListId("");
+    } else {
+      setListId(listProp.id);
+      openRightSidebar();
+    }
   };
 
   const handleDragStart = (e: DragEvent, listId: string) => {
@@ -178,12 +186,21 @@ export default function TodoList({
     setActiveList(null);
   };
 
+  // sync title with prop so that it rerenders in sidebar
+  useEffect(() => {
+    setTitle(listProp.title);
+  }, [listProp.title]);
+
   // Adjust height of textbox when editing starts
   // or when description changes programmatically
   useEffect(() => {
     if (isEditingTitle && textareaRef.current) {
       adjustTextareaHeight(textareaRef.current);
       textareaRef.current.focus(); // Keep autoFocus behavior
+      textareaRef.current.setSelectionRange(
+        textareaRef.current.value.length,
+        textareaRef.current.value.length,
+      );
     }
   }, [isEditingTitle, textareaRef, adjustTextareaHeight]);
 
@@ -193,7 +210,7 @@ export default function TodoList({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       data-list-id={listProp.id}
-      className={`group/list relative my-1 flex min-w-[250px] flex-col rounded-lg border-2 p-3 shadow-lg ${activeList?.getAttribute("data-list-id") === listProp.id ? "border-blue-500 bg-blue-50" : "bg-white"}`}
+      className={`group/list relative mb-2 flex min-w-[250px] flex-col rounded-lg border p-3 shadow-lg ${activeList?.getAttribute("data-list-id") === listProp.id ? "bg-blue-50" : "bg-white"}`}
     >
       <div className="flex justify-between">
         {/* list title: becomes textarea when editing */}
@@ -284,7 +301,9 @@ export default function TodoList({
       </button>
       {/* edit list button */}
       <button onClick={() => handleEditList()}>
-        <MdOutlineEditNote className="absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-200 opacity-0 transition-opacity group-hover/list:opacity-100" />
+        <MdOutlineEditNote
+          className={`absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg transition-opacity group-hover/list:opacity-100 ${isRightSidebarOpen && listId === listProp.id ? "bg-blue-500 text-white opacity-100" : "bg-gray-200 opacity-0"}`}
+        />
       </button>
       {/* add item button */}
       <button
@@ -298,6 +317,7 @@ export default function TodoList({
               updatedAt: new Date(Date.now()),
               description: "",
               isComplete: false,
+              isNew: true,
             },
           })
         }

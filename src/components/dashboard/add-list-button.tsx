@@ -22,6 +22,7 @@ export default function AddListButton() {
           createdAt: new Date(Date.now()),
           updatedAt: new Date(Date.now()),
           items: [],
+          isNew: true,
         })
       }
       aria-label="Add new list"

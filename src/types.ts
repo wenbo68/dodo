@@ -3,8 +3,8 @@ import { items, lists } from "./server/db/schema";
 import { z } from "zod";
 
 export type List = InferSelectModel<typeof lists>;
-export type Item = InferSelectModel<typeof items>;
-export type ListWithItems = List & { items: Item[] };
+export type Item = InferSelectModel<typeof items> & { isNew?: boolean };
+export type ListWithItems = List & { items: Item[]; isNew?: boolean };
 
 export const listFormSchema = z.object({
   title: z.string(),

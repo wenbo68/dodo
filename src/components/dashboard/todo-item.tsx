@@ -13,7 +13,9 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
 
   // create component states
   const [isCheckboxDisabled, setIsCheckboxDisabled] = useState(false);
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(
+    itemProp.isNew,
+  );
   const [description, setDescription] = useState(itemProp.description);
 
   // use ref if ui doesn't depend on the var (ie item.id isn't displayed in ui)
@@ -22,24 +24,10 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
   // using a var (via let) doesn't work
   // because functions created before the assignment of the var will only see the old value
 
+  //create required refs
   const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for the textarea
-  // Function to adjust textarea height
-  const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
-    if (element) {
-      element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
-      element.style.height = `${element.scrollHeight}px`; // Set height based on content
-    }
-  };
-  // useEffect is run immediately after the rerender caused by the state change
-  // state setter called (async) -> state updates -> rerender -> useEffect runs
-  // Adjust height when editing starts or description changes programmatically
-  useEffect(() => {
-    if (isEditingDescription && textareaRef.current) {
-      adjustTextareaHeight(textareaRef.current);
-      textareaRef.current.focus(); // Keep autoFocus behavior
-    }
-  }, [isEditingDescription, textareaRef, adjustTextareaHeight]); // Rerun when editing starts or description changes
 
+  // create required functions
   const handleItemDescriptionKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       (e.target as HTMLInputElement).blur();
@@ -51,6 +39,28 @@ export default function TodoItem({ itemProp }: { itemProp: Item }) {
     e.dataTransfer.setData("type", "item");
     e.dataTransfer.setData("itemId", itemId);
   };
+
+  const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
+    if (element) {
+      element.style.height = "auto"; // Reset height to recalculate scrollHeight
+      // element.scrollHeight; // Have to call element.scrollHeight twice for some reason...
+      element.style.height = `${element.scrollHeight}px`; // Set height based on content
+    }
+  };
+
+  useEffect(() => {
+    setDescription(itemProp.description);
+  }, [itemProp.description]);
+
+  // useEffect is run immediately after the rerender caused by the state change
+  // state setter called (async) -> state updates -> rerender -> useEffect runs
+  // Adjust height when editing starts or description changes programmatically
+  useEffect(() => {
+    if (isEditingDescription && textareaRef.current) {
+      adjustTextareaHeight(textareaRef.current);
+      textareaRef.current.focus(); // Keep autoFocus behavior
+    }
+  }, [isEditingDescription, textareaRef, adjustTextareaHeight]); // Rerun when editing starts or description changes
 
   return (
     <li data-item-id={itemProp.id} className="group flex gap-1 py-1">
