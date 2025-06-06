@@ -13,6 +13,7 @@ import { RightSidebarProvider } from "./right-sidebar-context";
 import { AuthProvider } from "./auth-context";
 import { LeftSidebarProvider } from "./left-sidebar-context";
 import { Session } from "next-auth";
+import { BotbarProvider } from "./botbar-context";
 
 // Create a client
 // Use a state to ensure the client is not recreated on every render
@@ -75,7 +76,9 @@ export function AppProvider({
         {/* Wrap children with React Context, which contains client side states, here */}
         <AuthProvider session={session} userId={userId}>
           <LeftSidebarProvider>
-            <RightSidebarProvider>{children}</RightSidebarProvider>
+            <RightSidebarProvider>
+              <BotbarProvider>{children}</BotbarProvider>
+            </RightSidebarProvider>
           </LeftSidebarProvider>
         </AuthProvider>
       </HydrationBoundary>

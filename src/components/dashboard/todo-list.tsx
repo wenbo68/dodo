@@ -1,7 +1,7 @@
 "use client";
 
 import TodoItem from "./todo-item";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MdOutlinePlaylistAdd, MdOutlineEditNote } from "react-icons/md";
 import { RxTrash } from "react-icons/rx";
 import { LiaMapPinSolid } from "react-icons/lia";
@@ -23,6 +23,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllListsWithItems } from "@/lib/db/list-utils";
 import { useRightSidebar } from "../context/right-sidebar-context";
 import { motion } from "framer-motion";
+import { useBotbar } from "../context/botbar-context";
+
+const BREAKPOINT_WIDTH = 670; // Define your breakpoint
 
 export default function TodoList({
   listProp,
@@ -35,12 +38,17 @@ export default function TodoList({
   const { userId } = useAuth();
   const {
     isRightSidebarOpen,
-    toggleRightSidebar,
     closeRightSidebar,
     openRightSidebar,
     listId,
-    setListId,
+    setListId: setRightListId,
   } = useRightSidebar();
+  const {
+    isBotbarOpen,
+    closeBotbar,
+    openBotbar,
+    setListId: setBotListId,
+  } = useBotbar();
 
   // fetch required client-side cache
   const queryClient = useQueryClient();
@@ -57,6 +65,7 @@ export default function TodoList({
   const [title, setTitle] = useState(listProp.title);
   const [isFocused, setIsFocused] = useState(false);
   const [activeList, setActiveList] = useState<HTMLElement | null>(null);
+  const [viewportWidth, setViewportWidth] = useState(0);
 
   const titleRef = useRef<HTMLDivElement>(null);
   // const focusedOnce = useRef(false); // This ref is key to let a new list focus only once
@@ -66,15 +75,56 @@ export default function TodoList({
     useListMutations();
   const { reorderItemsMutation, addItemMutation } = useItemMutations();
 
-  const handleEditList = () => {
-    if (listProp.id === listId) {
-      toggleRightSidebar();
-      setListId("");
-    } else {
-      setListId(listProp.id);
-      openRightSidebar();
+  const handleTitleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    const newTitle = e.currentTarget.textContent || "";
+    setTitle(newTitle);
+    setIsFocused(false);
+    if (newTitle !== listProp.title) {
+      listTitleMutation.mutate({
+        listId: listProp.id,
+        newTitle,
+      });
     }
   };
+
+  // const handleEditList = () => {
+  //   if (listProp.id === listId) {
+  //     toggleRightSidebar();
+  //     setListId("");
+  //   } else {
+  //     setListId(listProp.id);
+  //     openRightSidebar();
+  //   }
+  // };
+
+  // Memoize the handler to prevent unnecessary re-renders
+  const handleEditList = useCallback(() => {
+    const isMobile = viewportWidth < BREAKPOINT_WIDTH;
+    if (listProp.id === listId) {
+      closeBotbar();
+      closeRightSidebar();
+      setBotListId("");
+      setRightListId("");
+    } else {
+      setBotListId(listProp.id);
+      setRightListId(listProp.id);
+      if (isMobile) {
+        openBotbar();
+      } else {
+        openRightSidebar();
+      }
+    }
+  }, [
+    listProp.id,
+    listId,
+    setBotListId,
+    setRightListId,
+    viewportWidth,
+    openRightSidebar,
+    closeRightSidebar,
+    openBotbar,
+    closeBotbar,
+  ]);
 
   const handleDragStart = (e: DragEvent, listId: string) => {
     e.dataTransfer.setData("type", "list");
@@ -189,17 +239,24 @@ export default function TodoList({
     }
   }, [listProp.isNew, inSidebar, titleRef]);
 
-  const handleTitleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    const newTitle = e.currentTarget.textContent || "";
-    setTitle(newTitle);
-    setIsFocused(false);
-    if (newTitle !== listProp.title) {
-      listTitleMutation.mutate({
-        listId: listProp.id,
-        newTitle,
-      });
-    }
-  };
+  // Effect to get initial viewport width and listen for resize events
+  useEffect(() => {
+    // Set initial width
+    setViewportWidth(window.innerWidth);
+
+    // Handler for resize event
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+
+    // Add event listener
+    window.addEventListener("resize", handleResize);
+
+    // Clean up event listener
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
 
   return (
     <div
@@ -283,7 +340,7 @@ export default function TodoList({
       {/* edit list button */}
       <button onClick={() => handleEditList()}>
         <MdOutlineEditNote
-          className={`absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg transition-opacity group-hover/list:opacity-100 ${isRightSidebarOpen && listId === listProp.id ? "bg-blue-500 text-white opacity-100" : "bg-gray-200 opacity-0"}`}
+          className={`absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg transition-opacity group-hover/list:opacity-100 ${(isRightSidebarOpen || isBotbarOpen) && listId === listProp.id ? "bg-blue-500 text-white opacity-100" : "bg-gray-200 opacity-0"}`}
         />
       </button>
       {/* add item button */}
