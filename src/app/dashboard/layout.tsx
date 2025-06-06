@@ -18,22 +18,30 @@ import {
   HydrationBoundary,
 } from "@tanstack/react-query";
 import Topbar from "@/components/dashboard/topbar";
+import LeftSidebar from "@/components/dashboard/left-sidebar";
 
 export default async function Layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // fetch user session
-  const session = await auth(); // Your auth implementation
-  if (!session)
+  const session = await auth();
+  if (!session || !session.user) {
     return (
-      <>
+      <div className="flex min-h-screen items-center justify-center">
         <button className="w-20 rounded-lg border shadow-md">
-          <Link href="/auth/api/signin">Sign In</Link>
+          <Link
+            href={{
+              pathname: "/api/auth/signin",
+              query: { callbackUrl: "/dashboard" },
+            }}
+          >
+            Sign In
+          </Link>
         </button>
-      </>
+      </div>
     );
+  }
 
   // --- Server-Side Data Fetching and Prefetching ---
 
@@ -65,6 +73,7 @@ export default async function Layout({
         For clarity and v4 compatibility, explicitly passing is often shown.
       */}
       <AppProvider
+        session={session}
         userId={session.user.id}
         /* For v4: */ dehydratedState={dehydratedState}
       >
@@ -72,6 +81,7 @@ export default async function Layout({
           will now use useQuery with the same queryKey.
           They will find the data in the cache (hydrated from the server) instantly.*/}
         <Topbar />
+        <LeftSidebar />
         <RightSidebar /> {/* Make sure EditListSidebar is 'use client' */}
         {children} {/* Your page.tsx content */}
       </AppProvider>

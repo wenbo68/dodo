@@ -1,9 +1,11 @@
 // src/contexts/SidebarContext.tsx
 "use client"; // Context providers with state must be Client Components
 
+import { Session } from "next-auth";
 import React, { createContext, useState, useContext, ReactNode } from "react";
 
 interface AuthContextType {
+  session: Session;
   userId: string;
 }
 
@@ -20,13 +22,16 @@ export const useAuth = () => {
 export const AuthProvider = ({
   children,
   userId,
+  session,
 }: {
   children: ReactNode;
   userId: string;
+  session: Session;
 }) => {
   return (
     <AuthContext.Provider
       value={{
+        session,
         userId,
       }}
     >

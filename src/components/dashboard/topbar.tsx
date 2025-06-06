@@ -1,16 +1,17 @@
-import { signOut } from "@/server/auth";
+"use client";
+
+import { signOut } from "next-auth/react";
+import Image from "next/image";
+import { LuAlignJustify } from "react-icons/lu";
+import { useLeftSidebar } from "../context/left-sidebar-context";
 
 export default function Topbar() {
+  const { toggleLeftSidebar } = useLeftSidebar();
+
   return (
-    <div className="flex gap-1">
-      <button
-        className="w-20 rounded-lg border shadow-md"
-        onClick={async () => {
-          "use server";
-          await signOut({ redirectTo: "/api/auth/signin" });
-        }}
-      >
-        Sign Out
+    <div className="fixed z-30 flex items-center gap-2 p-4">
+      <button onClick={toggleLeftSidebar}>
+        <LuAlignJustify size={24} />
       </button>
     </div>
   );
