@@ -3,27 +3,25 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
 
 interface SidebarContextType {
-  isRightSidebarOpen: boolean;
-  toggleRightSidebar: () => void;
-  openRightSidebar: () => void;
-  closeRightSidebar: () => void;
+  isBotbarOpen: boolean;
+  toggleBotbar: () => void;
+  openBotbar: () => void;
+  closeBotbar: () => void;
   listId: string;
   setListId: (id: string) => void; // Add setListId to the interface
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
-export const useRightSidebar = () => {
+export const useBotbar = () => {
   const context = useContext(SidebarContext);
   if (context === undefined) {
-    throw new Error(
-      "useRightSidebar must be used within a RightSidebarContext",
-    );
+    throw new Error("useBotbar must be used within a BotbarProvider");
   }
   return context;
 };
 
-export const RightSidebarProvider = ({ children }: { children: ReactNode }) => {
+export const BotbarProvider = ({ children }: { children: ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Default: sidebar is closed
   const [listId, setListId] = useState<string>(""); // Add state for listId
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
@@ -33,12 +31,12 @@ export const RightSidebarProvider = ({ children }: { children: ReactNode }) => {
   return (
     <SidebarContext.Provider
       value={{
-        isRightSidebarOpen: isSidebarOpen,
-        toggleRightSidebar: toggleSidebar,
-        openRightSidebar: openSidebar,
-        closeRightSidebar: closeSidebar,
+        isBotbarOpen: isSidebarOpen,
+        toggleBotbar: toggleSidebar,
+        openBotbar: openSidebar,
+        closeBotbar: closeSidebar,
         listId,
-        setListId, // Provide the setListId function
+        setListId,
       }}
     >
       {children}

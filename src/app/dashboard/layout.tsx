@@ -19,6 +19,7 @@ import {
 } from "@tanstack/react-query";
 import Topbar from "@/components/dashboard/topbar";
 import LeftSidebar from "@/components/dashboard/left-sidebar";
+import Botbar from "@/components/dashboard/botbar";
 
 export default async function Layout({
   children,
@@ -81,6 +82,7 @@ export default async function Layout({
           will now use useQuery with the same queryKey.
           They will find the data in the cache (hydrated from the server) instantly.*/}
         <Topbar />
+        <Botbar />
         <LeftSidebar />
         <RightSidebar /> {/* Make sure EditListSidebar is 'use client' */}
         {children} {/* Your page.tsx content */}
