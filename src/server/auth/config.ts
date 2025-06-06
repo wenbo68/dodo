@@ -1,8 +1,8 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import GitHub from "next-auth/providers/github"
+import GitHub from "next-auth/providers/github";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import type { Provider } from "next-auth/providers"
+import type { Provider } from "next-auth/providers";
 
 import { db } from "~/server/db";
 import {
@@ -36,7 +36,7 @@ declare module "next-auth" {
 const providers: Provider[] = [
   GoogleProvider,
   GitHub,
-    /**
+  /**
    * ...add more providers here.
    *
    * Most other providers require a bit more work than the Discord provider. For example, the
@@ -45,19 +45,18 @@ const providers: Provider[] = [
    *
    * @see https://next-auth.js.org/providers/github
    */
-]
+];
 
 export const providerMap = providers
   .map((provider) => {
     if (typeof provider === "function") {
-      const providerData = provider()
-      return { id: providerData.id, name: providerData.name }
+      const providerData = provider();
+      return { id: providerData.id, name: providerData.name };
     } else {
-      return { id: provider.id, name: provider.name }
+      return { id: provider.id, name: provider.name };
     }
   })
-  .filter((provider) => provider.id !== "credentials")
-
+  .filter((provider) => provider.id !== "credentials");
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -80,5 +79,9 @@ export const authConfig = {
         id: user.id,
       },
     }),
+  },
+  session: {
+    maxAge: 60 * 60, // each extend extends by 60min
+    updateAge: 30 * 60, // extend once every 60min (even if there are multiple requests within that 30 min)
   },
 } satisfies NextAuthConfig;

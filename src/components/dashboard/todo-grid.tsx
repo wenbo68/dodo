@@ -140,7 +140,7 @@ export function TodoGrid() {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             data-pinned={true}
-            className={`grid w-full grid-cols-[repeat(auto-fit,250px)] justify-center gap-3 rounded-xl py-7 pr-5 ${activeGrid?.getAttribute("data-pinned") === "true" ? "border-blue-500 bg-blue-50" : "border-transparent"}`}
+            className={`grid w-full grid-cols-[repeat(auto-fit,250px)] justify-center gap-3 rounded-xl py-10 pr-5 ${activeGrid?.getAttribute("data-pinned") === "true" ? "border-blue-500 bg-blue-50" : "border-transparent"}`}
           >
             {/* 1 list */}
             {pinnedLists.map((list, index) => (
@@ -167,7 +167,7 @@ export function TodoGrid() {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             data-pinned={false}
-            className={`grid w-full grid-cols-[repeat(auto-fit,250px)] justify-center gap-3 rounded-xl py-8 pr-5 ${activeGrid?.getAttribute("data-pinned") === "false" ? "border-blue-500 bg-blue-50" : "border-transparent"} `}
+            className={`grid w-full grid-cols-[repeat(auto-fit,250px)] justify-center gap-3 rounded-xl py-10 pr-5 ${activeGrid?.getAttribute("data-pinned") === "false" ? "border-blue-500 bg-blue-50" : "border-transparent"} `}
           >
             {/* 1 list */}
             {regularLists.map((list, index) => (

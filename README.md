@@ -148,3 +148,4 @@ This project is open-source and available under the MIT License. Feel free to us
 13. infinite scrolling?
 14. if adding new list must be instant in frontend, we need to handle temp id before real id is available from backend. In this case, client cache will become the truth for temp list/item. However, client cache cannot survive a refresh from user. If users want the temp list/item to survive a refresh, we need indexedDB as the truth for temp list/item.
 15. when clicking addList/addItem, move viewport to let the user see the newly added list/item immediately
+16. phone mode and dark mode

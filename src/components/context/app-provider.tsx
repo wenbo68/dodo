@@ -12,6 +12,7 @@ import React from "react";
 import { RightSidebarProvider } from "./right-sidebar-context";
 import { AuthProvider } from "./auth-context";
 import { LeftSidebarProvider } from "./left-sidebar-context";
+import { Session } from "next-auth";
 
 // Create a client
 // Use a state to ensure the client is not recreated on every render
@@ -44,6 +45,7 @@ function getQueryClient() {
 
 interface AppProviderProps {
   children: React.ReactNode;
+  session: Session;
   userId: string;
   // The dehydrated state passed from the server
   // In v5 this is implicit in HydrationBoundary, you might not need to pass it explicitly here
@@ -53,6 +55,7 @@ interface AppProviderProps {
 
 export function AppProvider({
   children,
+  session,
   userId,
   dehydratedState,
 }: AppProviderProps) {
@@ -70,7 +73,7 @@ export function AppProvider({
       {/* In v5+, dehydratedState prop is not needed here if using the root layout setup */}
       <HydrationBoundary state={dehydratedState}>
         {/* Wrap children with React Context, which contains client side states, here */}
-        <AuthProvider userId={userId}>
+        <AuthProvider session={session} userId={userId}>
           <LeftSidebarProvider>
             <RightSidebarProvider>{children}</RightSidebarProvider>
           </LeftSidebarProvider>
