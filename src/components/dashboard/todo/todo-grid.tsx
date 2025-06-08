@@ -2,10 +2,10 @@
 
 import { DragEvent, useEffect, useRef, useState } from "react";
 import TodoList from "./todo-list";
-import { useAuth } from "../context/auth-context";
+import { useAuth } from "../../context/auth-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllListsWithItems } from "@/lib/db/list-utils";
-import AddListButton from "./add-list-button";
+import AddListButton from "../add-list-button";
 import Sortable from "sortablejs";
 import { useListMutations } from "@/lib/utils/todo-list-utils";
 import { ListDropIndicator } from "./drop-indicator";
@@ -131,57 +131,63 @@ export function TodoGrid() {
   const regularLists = lists.filter((list) => list.isPinned === false);
 
   return (
-    <>
-      <div className="flex flex-col gap-1">
-        {pinnedLists.length > 0 && (
-          /* grid containing pinned todo lists */
-          <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            data-pinned={true}
-            className={`grid w-full grid-cols-[repeat(auto-fit,250px)] justify-center gap-3 rounded-xl py-10 pr-5 ${activeGrid?.getAttribute("data-pinned") === "true" ? "border-blue-500 bg-blue-50" : "border-transparent"}`}
-          >
-            {/* 1 list */}
-            {pinnedLists.map((list, index) => (
-              <div key={list.id} className="flex">
-                <ListDropIndicator listId={list.id} />
-                <TodoList listProp={list} inSidebar={false} />
-                {index === pinnedLists.length - 1 && (
-                  <ListDropIndicator listId={"last-indicator"} />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+    <div className="flex flex-col gap-1">
+      {pinnedLists.length > 0 && (
+        /* grid containing pinned todo lists */
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          data-pinned={true}
+          className={`my-5 grid w-full grid-cols-[repeat(auto-fit,250px)] justify-center gap-3 rounded-xl py-5 pr-6 ${
+            activeGrid?.getAttribute("data-pinned") === "true"
+              ? "bg-blue-50 dark:bg-neutral-700" // Dark mode for active pinned grid
+              : "" // Border remains transparent
+          }`}
+        >
+          {/* 1 list */}
+          {pinnedLists.map((list, index) => (
+            <div key={list.id} className="flex">
+              <ListDropIndicator listId={list.id} />
+              <TodoList listProp={list} inSidebar={false} />
+              {index === pinnedLists.length - 1 && (
+                <ListDropIndicator listId={"last-indicator"} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
-        {pinnedLists.length > 0 && regularLists.length > 0 && (
-          /* Horizontal separator */
-          <hr className="border-t border-gray-300" />
-        )}
+      {pinnedLists.length > 0 && regularLists.length > 0 && (
+        /* Horizontal separator */
+        <hr className="border-t border-gray-300 dark:border-neutral-500" />
+      )}
 
-        {regularLists.length > 0 && (
-          /* grid containing regular todo lists */
-          <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            data-pinned={false}
-            className={`grid w-full grid-cols-[repeat(auto-fit,250px)] justify-center gap-3 rounded-xl py-10 pr-5 ${activeGrid?.getAttribute("data-pinned") === "false" ? "border-blue-500 bg-blue-50" : "border-transparent"} `}
-          >
-            {/* 1 list */}
-            {regularLists.map((list, index) => (
-              <div key={list.id} className="flex">
-                <ListDropIndicator listId={list.id} />
-                <TodoList listProp={list} inSidebar={false} />
-                {index === regularLists.length - 1 && (
-                  <ListDropIndicator listId={"last-indicator"} />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </>
+      {regularLists.length > 0 && (
+        /* grid containing regular todo lists */
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          data-pinned={false}
+          className={`my-5 grid w-full grid-cols-[repeat(auto-fit,250px)] justify-center gap-3 rounded-xl py-5 pr-6 ${
+            activeGrid?.getAttribute("data-pinned") === "false"
+              ? "bg-blue-50 dark:bg-neutral-700" // Dark mode for active regular grid
+              : "" // Border remains transparent
+          } `}
+        >
+          {/* 1 list */}
+          {regularLists.map((list, index) => (
+            <div key={list.id} className="flex">
+              <ListDropIndicator listId={list.id} />
+              <TodoList listProp={list} inSidebar={false} />
+              {index === regularLists.length - 1 && (
+                <ListDropIndicator listId={"last-indicator"} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

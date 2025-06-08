@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../context/auth-context";
-import { useRightSidebar } from "../context/right-sidebar-context";
-import TodoList from "./todo-list";
+import { useAuth } from "../../context/auth-context";
+import { useRightSidebar } from "../../context/right-sidebar-context";
+import TodoList from "../todo/todo-list";
 import { getAllListsWithItems } from "@/lib/db/list-utils";
 
 export default function RightSidebar() {
@@ -24,7 +24,7 @@ export default function RightSidebar() {
 
   return (
     <div
-      className={`fixed right-0 top-0 h-full w-80 overflow-y-auto bg-blue-50 px-6 py-10 ${isRightSidebarOpen ? "translate-x-0" : "translate-x-80"}`}
+      className={`fixed right-0 top-0 h-full w-80 overflow-y-auto bg-white px-6 py-10 dark:bg-neutral-800 ${isRightSidebarOpen ? "translate-x-0" : "translate-x-80"}`}
     >
       {list && <TodoList listProp={list} inSidebar={true} />}
     </div>

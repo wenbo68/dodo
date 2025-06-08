@@ -6,7 +6,7 @@ import {
 } from "~/lib/db/list-utils";
 import { auth, signIn } from "~/server/auth";
 import { AppProvider } from "@/components/context/app-provider";
-import RightSidebar from "@/components/dashboard/right-sidebar";
+import RightSidebar from "@/components/dashboard/bars/right-sidebar";
 import React from "react";
 // import AddListButton from "@/components/dashboard/add-list-button";
 // Import necessary items from TanStack Query for server-side
@@ -17,9 +17,9 @@ import {
   // Use Hydrate in v4
   HydrationBoundary,
 } from "@tanstack/react-query";
-import Topbar from "@/components/dashboard/topbar";
-import LeftSidebar from "@/components/dashboard/left-sidebar";
-import Botbar from "@/components/dashboard/botbar";
+import Topbar from "@/components/dashboard/bars/topbar";
+import LeftSidebar from "@/components/dashboard/bars/left-sidebar";
+import Botbar from "@/components/dashboard/bars/botbar";
 
 export default async function Layout({
   children,

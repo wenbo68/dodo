@@ -4,7 +4,7 @@ import { useBotbar } from "@/components/context/botbar-context";
 import { useLeftSidebar } from "@/components/context/left-sidebar-context";
 import { useRightSidebar } from "@/components/context/right-sidebar-context";
 import AddListButton from "@/components/dashboard/add-list-button";
-import { TodoGrid } from "@/components/dashboard/todo-grid";
+import { TodoGrid } from "@/components/dashboard/todo/todo-grid";
 
 export default function Page() {
   // get requied client-side states
@@ -17,7 +17,7 @@ export default function Page() {
       <main
         className={`overflow-y-auto ${isRightSidebarOpen ? "mr-80" : "mr-0"}`}
       >
-        <div className={`${isBotbarOpen ? "mb-96" : "mb-0"} px-12`}>
+        <div className={`${isBotbarOpen ? "mb-80" : "mb-0"} pl-12 pr-10`}>
           <TodoGrid />
         </div>
       </main>
