@@ -9,7 +9,7 @@ export function ListDropIndicator({
     <div
       // data-drop-pinned={isPinned}
       data-drop-list-id={listId}
-      className="mx-1 border-2 border-blue-500 opacity-0"
+      className="mx-1 mb-2 border-2 border-blue-500 opacity-0"
     />
   );
 }

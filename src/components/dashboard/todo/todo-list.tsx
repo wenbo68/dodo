@@ -18,12 +18,14 @@ import {
   getNearestIndicator,
   highlightIndicator,
 } from "@/lib/utils/dnd-utils";
-import { useAuth } from "../context/auth-context";
+import { useAuth } from "../../context/auth-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllListsWithItems } from "@/lib/db/list-utils";
-import { useRightSidebar } from "../context/right-sidebar-context";
+import { useRightSidebar } from "../../context/right-sidebar-context";
 import { motion } from "framer-motion";
-import { useBotbar } from "../context/botbar-context";
+import { useBotbar } from "../../context/botbar-context";
+import { LuPen, LuPlus, LuTrash } from "react-icons/lu";
+import { IoAdd } from "react-icons/io5";
 
 const BREAKPOINT_WIDTH = 670; // Define your breakpoint
 
@@ -64,7 +66,7 @@ export default function TodoList({
   // create component states
   const [title, setTitle] = useState(listProp.title);
   const [isFocused, setIsFocused] = useState(false);
-  const [activeList, setActiveList] = useState<HTMLElement | null>(null);
+  const [isActive, setIsActive] = useState<HTMLElement | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
 
   const titleRef = useRef<HTMLDivElement>(null);
@@ -86,16 +88,6 @@ export default function TodoList({
       });
     }
   };
-
-  // const handleEditList = () => {
-  //   if (listProp.id === listId) {
-  //     toggleRightSidebar();
-  //     setListId("");
-  //   } else {
-  //     setListId(listProp.id);
-  //     openRightSidebar();
-  //   }
-  // };
 
   // Memoize the handler to prevent unnecessary re-renders
   const handleEditList = useCallback(() => {
@@ -138,7 +130,7 @@ export default function TodoList({
 
     const dropListEl = e.currentTarget as HTMLElement;
     clearIndicators(dropListEl, `[data-drop-item-id]`);
-    setActiveList(null);
+    setIsActive(null);
 
     // find target item info: itemId, srccListId, oldIndex
     if (!lists) {
@@ -219,12 +211,12 @@ export default function TodoList({
     if (e.dataTransfer.getData("type") !== "item") return;
     e.preventDefault();
     highlightIndicator(e, `[data-drop-item-id]`);
-    setActiveList(e.currentTarget as HTMLElement);
+    setIsActive(e.currentTarget as HTMLElement);
   };
   const handleDragLeave = (e: DragEvent) => {
     if (e.dataTransfer.getData("type") !== "item") return;
     clearIndicators(e.currentTarget as HTMLElement, `[data-drop-item-id]`);
-    setActiveList(null);
+    setIsActive(null);
   };
 
   // Sync title with prop to sync with list in sidebar
@@ -264,17 +256,24 @@ export default function TodoList({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       data-list-id={listProp.id}
-      className={`group/list relative mb-2 flex min-w-[250px] flex-col rounded-lg border p-3 shadow-lg ${activeList?.getAttribute("data-list-id") === listProp.id ? "bg-blue-50" : "bg-white"}`}
+      className={`group/list relative mb-2 flex min-w-[250px] max-w-[250px] flex-col gap-0 rounded-lg border border-neutral-200 p-3 shadow-lg dark:border-neutral-300 ${
+        isActive?.getAttribute("data-list-id") === listProp.id
+          ? "bg-blue-50 dark:bg-neutral-700" // Dark mode for active list
+          : "bg-white dark:bg-neutral-800" // Dark mode for inactive list
+      }`}
     >
-      <div className="flex justify-between">
+      <div className="mb-1 flex items-start justify-between">
         <motion.div
           ref={titleRef}
           contentEditable="true"
           suppressContentEditableWarning={true}
           onFocus={(e) => setIsFocused(true)}
-          // onInput={handleTitleInput}
           onBlur={handleTitleBlur}
-          className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold outline-none ${title === "" && !isFocused ? "text-gray-300" : ""}`}
+          className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold outline-none ${
+            title === "" && !isFocused
+              ? "text-gray-300 dark:text-neutral-600" // Dark mode for placeholder text
+              : "text-gray-800 dark:text-neutral-100" // Dark mode for actual title text
+          }`}
         >
           {title || // If title is empty string, use placeholder
             (!isFocused &&
@@ -299,7 +298,7 @@ export default function TodoList({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-gray-500 hover:text-gray-700"
+            className="text-neutral-300 dark:text-neutral-500" // Dark mode for handle icon
           >
             <circle cx="8" cy="8" r="1" />
             <circle cx="8" cy="16" r="1" />
@@ -312,7 +311,7 @@ export default function TodoList({
       <ul data-list-id={listProp.id}>
         {/* 1 item */}
         {listProp.items.map((item, index) => (
-          <div key={item.id} className="flex flex-col">
+          <div key={item.id} className="flex flex-col gap-1">
             <ItemDropIndicator itemId={item.id} />
             <TodoItem itemProp={item} inSidebar={inSidebar} />
             {index === listProp.items.length - 1 && (
@@ -334,13 +333,21 @@ export default function TodoList({
         }
       >
         <LiaMapPinSolid
-          className={`absolute -top-4 left-[12.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg transition-opacity group-hover/list:opacity-100 ${listProp.isPinned ? "bg-blue-500 text-white opacity-100" : "bg-gray-200 opacity-0"}`}
+          className={`absolute -top-4 left-[12.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white text-neutral-800 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100 ${
+            listProp.isPinned
+              ? "opacity-100" // Pinned state remains same if blue is desired
+              : "opacity-0" // Dark mode for unpinned icon background/text
+          }`}
         />
       </button>
       {/* edit list button */}
       <button onClick={() => handleEditList()}>
-        <MdOutlineEditNote
-          className={`absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg transition-opacity group-hover/list:opacity-100 ${(isRightSidebarOpen || isBotbarOpen) && listId === listProp.id ? "bg-blue-500 text-white opacity-100" : "bg-gray-200 opacity-0"}`}
+        <LuPen
+          className={`absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white p-1 text-neutral-800 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100 ${
+            (isRightSidebarOpen || isBotbarOpen) && listId === listProp.id
+              ? "opacity-100" // Active edit state remains same
+              : "opacity-0" // Dark mode for inactive edit icon
+          }`}
         />
       </button>
       {/* add item button */}
@@ -361,13 +368,23 @@ export default function TodoList({
           })
         }
       >
-        <MdOutlinePlaylistAdd className="absolute -top-4 left-[62.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-200 opacity-0 transition-opacity group-hover/list:opacity-100" />
+        <IoAdd
+          className="absolute -top-4 left-[62.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white text-neutral-800 opacity-0 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100" // Dark mode for add item icon
+        />
       </button>
       {/* delete list button */}
       <button
-        onClick={() => deleteListMutation.mutate({ listId: listProp.id })}
+        onClick={() => {
+          deleteListMutation.mutate({ listId: listProp.id });
+          if (listId === listProp.id) {
+            closeBotbar();
+            closeRightSidebar();
+          }
+        }}
       >
-        <RxTrash className="absolute -top-4 left-[87.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-gray-200 opacity-0 transition-opacity group-hover/list:opacity-100" />
+        <LuTrash
+          className="absolute -top-4 left-[87.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white p-1 text-neutral-800 opacity-0 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100" // Dark mode for delete icon
+        />
       </button>
     </div>
   );

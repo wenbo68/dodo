@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useLeftSidebar } from "../context/left-sidebar-context";
+import { useLeftSidebar } from "../../context/left-sidebar-context";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "../context/auth-context";
+import { useAuth } from "../../context/auth-context";
 import { signOut } from "next-auth/react";
 import { LuAlignJustify, LuPower, LuTrash, LuUser } from "react-icons/lu";
 import { usePathname } from "next/navigation";
@@ -43,13 +43,13 @@ export default function LeftSidebar() {
       {/* Overlay */}
       {isLeftSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black opacity-50"
+          className="fixed inset-0 z-40 bg-black opacity-50" // Darker opacity in dark mode
           onClick={closeLeftSidebar} // Close sidebar when overlay is clicked
         ></div>
       )}
       <nav
         ref={sidebarRef}
-        className={`fixed left-0 top-0 z-50 flex h-full w-72 flex-col gap-7 border bg-white p-4 ${isLeftSidebarOpen ? "translate-x-0" : "-translate-x-72"}`}
+        className={`fixed left-0 top-0 z-50 flex h-full w-72 flex-col gap-7 bg-white p-4 dark:bg-neutral-800 ${isLeftSidebarOpen ? "translate-x-0" : "-translate-x-72"}`}
       >
         {/* Profile Photo */}
         <div className="flex items-end gap-3">
@@ -65,7 +65,9 @@ export default function LeftSidebar() {
             )}
           </div>
 
-          <span className="text-xl font-bold text-gray-900">
+          <span className="text-xl font-bold text-neutral-800 dark:text-neutral-100">
+            {" "}
+            {/* Dark mode for name */}
             {session.user.name?.split(" ")[0]}
           </span>
         </div>
@@ -73,19 +75,23 @@ export default function LeftSidebar() {
         <div className="flex flex-col items-start gap-1 px-2">
           <Link
             href={"/dashboard"}
-            className={`flex w-full items-center gap-3 rounded-lg px-2 py-1 hover:bg-gray-200 ${pathname === "/dashboard" ? "bg-gray-200" : "bg-white"}`}
+            className={`flex w-full items-center gap-3 rounded-lg px-2 py-1 text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700 ${
+              pathname === "/dashboard"
+                ? "bg-neutral-100 dark:bg-neutral-700" // Active link in dark mode
+                : "bg-white dark:bg-neutral-800" // Inactive link in dark mode
+            }`}
           >
             <LuAlignJustify />
             <span className="text-base">Lists</span>
           </Link>
 
-          <button className="flex w-full items-center gap-3 rounded-lg px-2 py-1 hover:bg-gray-200">
+          <button className="flex w-full items-center gap-3 rounded-lg px-2 py-1 text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700">
             <LuTrash />
             <span className="text-base">Trash</span>
           </button>
 
           <button
-            className="flex w-full items-center gap-3 rounded-lg px-2 py-1 hover:bg-gray-200"
+            className="flex w-full items-center gap-3 rounded-lg px-2 py-1 text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
             onClick={async () => {
               await signOut({
                 redirectTo: "/api/auth/signin?callbackUrl=/dashboard",
@@ -97,7 +103,7 @@ export default function LeftSidebar() {
           </button>
 
           <button
-            className="flex w-full items-center gap-3 rounded-lg px-2 py-1 hover:bg-gray-200"
+            className="flex w-full items-center gap-3 rounded-lg px-2 py-1 text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
             onClick={async () => {
               await signOut({ redirectTo: "/" });
             }}
