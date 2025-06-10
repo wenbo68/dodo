@@ -2,7 +2,19 @@
 
 import { db } from "~/server/db";
 import { items, lists } from "~/server/db/schema";
-import { and, eq, gt, gte, lt, lte, ne, sql } from "drizzle-orm";
+import {
+  and,
+  eq,
+  gt,
+  gte,
+  is,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  ne,
+  sql,
+} from "drizzle-orm";
 import { ListWithItems } from "@/types";
 import { addItem, updateItem } from "./item-actions";
 
@@ -48,23 +60,53 @@ export async function pinList(listId: string, newIsPinned: boolean) {
   }
 }
 
+export async function recoverList(listId: string) {
+  const [targetList] = await Promise.all([
+    db.query.lists.findFirst({
+      where: and(eq(lists.id, listId), isNotNull(lists.deletedAt)),
+    }),
+  ]);
+  if (!targetList || !targetList.deletedAt)
+    throw new Error("recoverList() failed: could not find target list in db");
+  try {
+    await db.transaction(async (tx) => {
+      //move pinned/regular lists down by 1 to create space for recovered list
+      await tx
+        .update(lists)
+        .set({ position: sql`${lists.position} + 1` })
+        .where(
+          and(
+            eq(lists.userId, targetList.userId),
+            eq(lists.isPinned, targetList.isPinned),
+          ),
+        );
+      //set deletedAt to null for target list
+      await tx
+        .update(lists)
+        .set({ deletedAt: null, position: 0 })
+        .where(eq(lists.id, targetList.id));
+    });
+  } catch (error) {
+    throw new Error("recoverList() failed: " + String(error));
+  }
+}
+
 export async function deleteList(listId: string) {
   //find target list to be deleted
   const [targetList] = await Promise.all([
     db.query.lists.findFirst({
-      where: eq(lists.id, listId),
+      where: and(eq(lists.id, listId), isNull(lists.deletedAt)),
     }),
   ]);
-  if (!targetList)
-    throw new Error(
-      "updateItemPosition() failed: could not find target item in db",
-    );
+  if (!targetList || targetList.deletedAt)
+    throw new Error("deleteList() failed: could not find target list in db");
   try {
     await db.transaction(async (tx) => {
-      // Delete all items associated with the list
-      await tx.delete(items).where(eq(items.listId, listId));
-      // Delete the list itself
-      await tx.delete(lists).where(eq(lists.id, listId));
+      // set delete time for target list
+      await tx
+        .update(lists)
+        .set({ deletedAt: new Date() })
+        .where(eq(lists.id, targetList.id));
 
       // Update positions of lists below the deleted list
       await tx

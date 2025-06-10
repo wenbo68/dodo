@@ -1,17 +1,21 @@
 "use client";
 
-import { DragEvent, useEffect, useRef, useState } from "react";
+import { DragEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Item } from "~/types";
-import { useItemMutations } from "@/lib/utils/todo-item-utils";
+import { useItemMutations } from "@/lib/utils/todo-item-mutations";
 import { motion } from "framer-motion";
 import { IoMdCheckmark } from "react-icons/io";
+import { useItemDnd } from "@/lib/utils/todo-item-dnd";
+import { set } from "zod";
 
 export default function TodoItem({
   itemProp,
   inSidebar,
+  isReadOnly,
 }: {
   itemProp: Item;
   inSidebar: boolean;
+  isReadOnly: boolean;
 }) {
   const {
     deleteItemMutation,
@@ -21,17 +25,37 @@ export default function TodoItem({
 
   // create component states
   const [isCheckboxDisabled, setIsCheckboxDisabled] = useState(false);
-  // const [isFocused, setIsFocused] = useState(false);
   const [description, setDescription] = useState(itemProp.description);
+  const [isFocused, setIsFocused] = useState(false);
 
   //create required refs
   const descriptionRef = useRef<HTMLDivElement>(null);
 
+  // fetch required functions
+  const { handleDragStart } = useItemDnd();
+
   // create required functions
-  const handleDragStart = (e: DragEvent, itemId: string) => {
-    e.dataTransfer.setData("type", "item");
-    e.dataTransfer.setData("itemId", itemId);
-  };
+  const handleDescriptionBlur = useCallback(
+    (e: React.FocusEvent<HTMLDivElement>) => {
+      setIsFocused(false);
+
+      const newDescription = e.currentTarget.textContent || "";
+      setDescription(newDescription);
+      if (newDescription !== itemProp.description) {
+        itemDescriptionMutation.mutate({
+          itemId: itemProp.id,
+          newDescription,
+        });
+      }
+    },
+    [
+      setIsFocused,
+      setDescription,
+      itemProp.description,
+      itemProp.id,
+      itemDescriptionMutation,
+    ],
+  );
 
   const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
     if (element) {
@@ -54,24 +78,15 @@ export default function TodoItem({
     }
   }, [itemProp.isNew, itemProp.inSidebar, inSidebar, descriptionRef]);
 
-  const handleDescriptionBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    const newDescription = e.currentTarget.textContent || "";
-    setDescription(newDescription);
-    if (newDescription !== itemProp.description) {
-      itemDescriptionMutation.mutate({
-        itemId: itemProp.id,
-        newDescription,
-      });
-    }
-  };
-
   return (
     <li data-item-id={itemProp.id} className="group flex gap-1">
       {/* Item handle */}
       <div
-        draggable="true"
-        onDragStart={(e) => handleDragStart(e, itemProp.id)}
-        className="item-drag-handle h-4 w-4 translate-y-[1px] cursor-move"
+        draggable={!isReadOnly}
+        onDragStart={
+          isReadOnly ? undefined : (e) => handleDragStart(e, itemProp.id)
+        }
+        className={`item-drag-handle h-4 w-4 translate-y-[1px] ${isReadOnly ? "" : "cursor-move"}`}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -94,7 +109,9 @@ export default function TodoItem({
         </svg>
       </div>
       {/* Item checkbox */}
-      <label className="relative flex translate-y-[1px] cursor-pointer">
+      <label
+        className={`relative flex translate-y-[1px] ${isReadOnly ? "cursor-default" : "cursor-pointer"} `}
+      >
         <input
           type="checkbox"
           className={`peer h-4 w-4 appearance-none rounded border border-neutral-800 bg-transparent checked:border-neutral-300 dark:border-neutral-100 dark:checked:border-neutral-600`}
@@ -108,7 +125,7 @@ export default function TodoItem({
               newIsComplete: e.target.checked,
             });
           }}
-          disabled={isCheckboxDisabled}
+          disabled={isCheckboxDisabled || isReadOnly}
         />
         <span className="absolute text-neutral-300 opacity-0 peer-checked:opacity-100 dark:text-neutral-600">
           <IoMdCheckmark className="pb-0.5 pl-0.5 pr-1" />
@@ -117,9 +134,9 @@ export default function TodoItem({
       {/* Item description: becomes textarea when editing*/}
       <motion.div
         ref={descriptionRef}
-        contentEditable={true}
+        contentEditable={!isReadOnly}
         suppressContentEditableWarning={true}
-        // onFocus={(e) => setIsFocused(true)}
+        onFocus={isReadOnly ? undefined : (e) => setIsFocused(true)}
         onBlur={handleDescriptionBlur}
         className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-sm font-medium outline-none ${
           itemProp.isComplete
@@ -136,7 +153,7 @@ export default function TodoItem({
             itemId: itemProp.id,
           })
         }
-        className="h-5 text-xs text-neutral-600 opacity-0 hover:text-gray-800 group-hover:opacity-100 dark:text-gray-300 dark:hover:text-neutral-100"
+        className={`h-5 text-xs font-bold text-neutral-600 opacity-0 hover:text-gray-800 group-hover:opacity-100 dark:text-gray-300 dark:hover:text-neutral-100 ${isReadOnly ? "hidden" : "group-hover:opacity-100"} ${isFocused ? "opacity-100" : "opacity-0"}`}
       >
         X
       </button>

@@ -80,15 +80,24 @@ export default function LeftSidebar() {
                 ? "bg-neutral-100 dark:bg-neutral-700" // Active link in dark mode
                 : "bg-white dark:bg-neutral-800" // Inactive link in dark mode
             }`}
+            onClick={closeLeftSidebar} // Close sidebar when link is clicked
           >
             <LuAlignJustify />
             <span className="text-base">Lists</span>
           </Link>
 
-          <button className="flex w-full items-center gap-3 rounded-lg px-2 py-1 text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700">
+          <Link
+            href={"/dashboard/trash"}
+            className={`flex w-full items-center gap-3 rounded-lg px-2 py-1 text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700 ${
+              pathname === "/dashboard/trash"
+                ? "bg-neutral-100 dark:bg-neutral-700" // Active link in dark mode
+                : "bg-white dark:bg-neutral-800" // Inactive link in dark mode
+            }`}
+            onClick={closeLeftSidebar} // Close sidebar when link is clicked
+          >
             <LuTrash />
             <span className="text-base">Trash</span>
-          </button>
+          </Link>
 
           <button
             className="flex w-full items-center gap-3 rounded-lg px-2 py-1 text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"

@@ -2,11 +2,9 @@
 
 import { useAuth } from "@/components/context/auth-context";
 import { useBotbar } from "@/components/context/botbar-context";
-import { useLeftSidebar } from "@/components/context/left-sidebar-context";
 import { useRightSidebar } from "@/components/context/right-sidebar-context";
-import AddListButton from "@/components/dashboard/add-list-button";
 import { TodoGrid } from "@/components/dashboard/todo/todo-grid";
-import { getAllListsWithItems } from "@/lib/db/list-utils";
+import { getDeletedListsWithItems } from "@/lib/db/list-utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function Page() {
@@ -20,8 +18,8 @@ export default function Page() {
     status,
     error,
   } = useQuery({
-    queryKey: ["lists", userId],
-    queryFn: () => getAllListsWithItems(userId),
+    queryKey: ["deletedLists", userId],
+    queryFn: () => getDeletedListsWithItems(userId),
   });
 
   // get requied client-side states
@@ -52,15 +50,12 @@ export default function Page() {
   // after loading cache succeeds
 
   return (
-    <>
-      <AddListButton />
-      <main
-        className={`overflow-y-auto ${isRightSidebarOpen ? "mr-80" : "mr-0"}`}
-      >
-        <div className={`${isBotbarOpen ? "mb-80" : "mb-0"} pl-12 pr-10`}>
-          <TodoGrid listsProp={lists} />
-        </div>
-      </main>
-    </>
+    <main
+      className={`overflow-y-auto ${isRightSidebarOpen ? "mr-80" : "mr-0"}`}
+    >
+      <div className={`${isBotbarOpen ? "mb-80" : "mb-0"} pl-12 pr-10`}>
+        <TodoGrid listsProp={lists} />
+      </div>
+    </main>
   );
 }

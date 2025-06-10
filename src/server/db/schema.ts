@@ -40,6 +40,7 @@ export const lists = createTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
     userIdIdx: index("list_user_id_idx").on(table.userId),
