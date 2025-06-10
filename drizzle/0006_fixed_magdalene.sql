@@ -1,0 +1,1 @@
+ALTER TABLE "t3-trial1-postgres_list" ADD COLUMN "deleted_at" timestamp with time zone;

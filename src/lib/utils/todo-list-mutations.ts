@@ -6,13 +6,14 @@ import {
   addListWithItems,
   deleteList,
   pinList,
+  recoverList,
   updateListPositionAndIsPinned,
   updateListTitle,
   updateListWithItems,
 } from "../db/list-actions";
-
+import toast from "react-hot-toast"; // Import toast from react-hot-toast
 import { useAuth } from "@/components/context/auth-context";
-import { useItemMutations } from "./todo-item-utils";
+import { useItemMutations } from "./todo-item-mutations";
 
 export const useListMutations = () => {
   // Access client-side states and utilities using other hooks
@@ -90,14 +91,122 @@ export const useListMutations = () => {
     },
   });
 
+  const recoverListMutation = useMutation({
+    mutationFn: async ({ listId }: { listId: string }) => {
+      await recoverList(listId);
+    },
+    onMutate: async ({ listId }: { listId: string }) => {
+      await queryClient.cancelQueries({ queryKey: ["lists", userId] });
+      await queryClient.cancelQueries({ queryKey: ["deletedLists", userId] });
+      // save the original cache
+      const originalLists = queryClient.getQueryData(["lists", userId]);
+      const originalDeletedLists = queryClient.getQueryData([
+        "deletedLists",
+        userId,
+      ]);
+      let targetList: ListWithItems | undefined;
+      // optimistically update the cache
+      queryClient.setQueryData(
+        ["deletedLists", userId],
+        (oldDeletedLists: ListWithItems[]) => {
+          if (!oldDeletedLists) {
+            console.error(
+              "recoverListMutation onMutate failed: oldDeletedLists not found in cache",
+            );
+            return oldDeletedLists;
+          }
+          // find target list
+          targetList = oldDeletedLists.find((list) => list.id === listId);
+          if (!targetList) {
+            console.error(
+              "recoverListMutation onMutate failed: targetList not found in cache",
+            );
+            return oldDeletedLists;
+          }
+          // remove the list from the deleted lists cache
+          const updatedDeletedLists = oldDeletedLists.filter(
+            (list) => list.id !== listId,
+          );
+          return updatedDeletedLists;
+        },
+      );
+      if (!targetList) {
+        console.error(
+          "recoverListMutation onMutate failed: targetList is undefined",
+        );
+        return { originalLists, originalDeletedLists };
+      }
+      queryClient.setQueryData(
+        ["lists", userId],
+        (oldLists: ListWithItems[]) => {
+          if (!oldLists) {
+            console.error(
+              "recoverListMutation onMutate failed: oldLists not found in cache",
+            );
+            return oldLists;
+          }
+          // add target list to the beginning of the lists cache
+          // move pinned/regular lists down by 1 to create space for recovered list
+          const updatedLists = [
+            { ...targetList, deletedAt: null, position: -1 },
+            ...oldLists.map((list) => {
+              return {
+                ...list,
+                position:
+                  list.isPinned === targetList!.isPinned
+                    ? list.position + 1
+                    : list.position,
+              };
+            }),
+          ];
+          // sort the lists by position
+          const sortedLists = updatedLists.sort((a, b) => {
+            return a.position - b.position;
+          });
+          return sortedLists;
+        },
+      );
+      return { originalLists, originalDeletedLists };
+    },
+    onError: (error, prop, context) => {
+      // Rollback to the original lists in case of error
+      if (context?.originalLists) {
+        queryClient.setQueryData(["lists", userId], context.originalLists);
+      }
+      if (context?.originalDeletedLists) {
+        queryClient.setQueryData(
+          ["deletedLists", userId],
+          context.originalDeletedLists,
+        );
+      }
+      console.error("recoverListMutation onError failed:", error);
+    },
+    onSettled: () => {
+      // invalidate and refetch
+      queryClient.invalidateQueries({
+        queryKey: ["lists", userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["deletedLists", userId],
+      });
+    },
+  });
+
   const deleteListMutation = useMutation({
     mutationFn: async ({ listId }: { listId: string }) => {
       await deleteList(listId);
     },
     onMutate: async ({ listId }: { listId: string }) => {
       await queryClient.cancelQueries({ queryKey: ["lists", userId] });
+      await queryClient.cancelQueries({ queryKey: ["deletedLists", userId] });
       // save the original cache
       const originalLists = queryClient.getQueryData(["lists", userId]);
+      const originalDeletedLists = queryClient.getQueryData([
+        "deletedLists",
+        userId,
+      ]);
+      //var for target list
+      let targetList: ListWithItems | undefined;
       // optimistically update the cache
       queryClient.setQueryData(
         ["lists", userId],
@@ -109,7 +218,7 @@ export const useListMutations = () => {
             return oldLists;
           }
           // find target list
-          const targetList = oldLists.find((list) => list.id === listId);
+          targetList = oldLists.find((list) => list.id === listId);
           if (!targetList) {
             console.error(
               "deleteListMutation onMutate failed: targetList not found in cache",
@@ -124,31 +233,52 @@ export const useListMutations = () => {
               return {
                 ...list,
                 position:
-                  list.isPinned === targetList.isPinned &&
-                  list.position > targetList.position
+                  list.isPinned === targetList!.isPinned &&
+                  list.position > targetList!.position
                     ? list.position - 1
                     : list.position,
               };
             });
-          // // move lists below the deleted list up by 1
-          // updatedLists.forEach((list) => {
-          //   if (
-          //     list.isPinned === targetList.isPinned &&
-          //     list.position > targetList.position
-          //   ) {
-          //     list.position--;
-          //   }
-          // });
           return updatedLists;
         },
       );
 
-      return { originalLists };
+      if (!targetList) {
+        console.error(
+          "deleteListMutation onMutate failed: targetList is undefined",
+        );
+        return { originalLists, originalDeletedLists };
+      }
+
+      queryClient.setQueryData(
+        ["deletedLists", userId],
+        (oldDeletedLists: ListWithItems[] = []) => {
+          if (!oldDeletedLists) {
+            console.error(
+              "deleteListMutation onMutate failed: oldDeletedLists not found in cache",
+            );
+            return oldDeletedLists;
+          }
+          // just add target to the beginning
+          // no need to edit other info b/c deleted lists are only for display
+          // cache will be updated onSettled anyway
+          const updatedDeletedLists = [targetList, ...oldDeletedLists];
+          return updatedDeletedLists;
+        },
+      );
+
+      return { originalLists, originalDeletedLists };
     },
     onError: (error, prop, context) => {
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
+      }
+      if (context?.originalDeletedLists) {
+        queryClient.setQueryData(
+          ["deletedLists", userId],
+          context.originalDeletedLists,
+        );
       }
       console.error("AddListMutation onError failed:", error);
     },
@@ -156,6 +286,9 @@ export const useListMutations = () => {
       // invalidate and refetch
       queryClient.invalidateQueries({
         queryKey: ["lists", userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["deletedLists", userId],
       });
     },
   });
@@ -460,6 +593,7 @@ export const useListMutations = () => {
   return {
     addListMutation,
     updateListMutation,
+    recoverListMutation,
     deleteListMutation,
     listTitleMutation,
     reorderListsMutation,

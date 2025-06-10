@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Source_Sans_3, Manrope } from "next/font/google";
 
-import Header from "@/components/landing/Header";
-import Footer from "@/components/landing/Footer";
 import { siteDetails } from "@/data/siteDetails";
 
 import "@/styles/globals.css";
+import { DragDropTouchProvider } from "@/components/context/dnd-touch-provider";
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
@@ -53,7 +52,7 @@ export default function RootLayout({
         {siteDetails.googleAnalyticsId && (
           <GoogleAnalytics gaId={siteDetails.googleAnalyticsId} />
         )}
-        {children}
+        <DragDropTouchProvider>{children}</DragDropTouchProvider>
       </body>
     </html>
   );

@@ -7,8 +7,8 @@ import { RxTrash } from "react-icons/rx";
 import { LiaMapPinSolid } from "react-icons/lia";
 import Sortable from "sortablejs";
 import { ListWithItems } from "@/types";
-import { useListMutations } from "@/lib/utils/todo-list-utils";
-import { useItemMutations } from "@/lib/utils/todo-item-utils";
+import { useListMutations } from "@/lib/utils/todo-list-mutations";
+import { useItemMutations } from "@/lib/utils/todo-item-mutations";
 import { v4 } from "uuid";
 import { DragEvent } from "react";
 import { ItemDropIndicator } from "./drop-indicator";
@@ -26,8 +26,13 @@ import { motion } from "framer-motion";
 import { useBotbar } from "../../context/botbar-context";
 import { LuPen, LuPlus, LuTrash } from "react-icons/lu";
 import { IoAdd } from "react-icons/io5";
+import { useItemDnd } from "@/lib/utils/todo-item-dnd";
+import { useListDnd } from "@/lib/utils/todo-list-dnd";
+import { CgRedo } from "react-icons/cg";
+import toast from "react-hot-toast";
+import { recoverList } from "@/lib/db/list-actions";
 
-const BREAKPOINT_WIDTH = 670; // Define your breakpoint
+const USE_BOTBAR_WIDTH = 670;
 
 export default function TodoList({
   listProp,
@@ -36,8 +41,10 @@ export default function TodoList({
   listProp: ListWithItems;
   inSidebar: boolean;
 }) {
+  // variables
+  const isReadOnly = listProp.deletedAt !== null;
+
   // fetch requied client-side states
-  const { userId } = useAuth();
   const {
     isRightSidebarOpen,
     closeRightSidebar,
@@ -52,46 +59,46 @@ export default function TodoList({
     setListId: setBotListId,
   } = useBotbar();
 
-  // fetch required client-side cache
-  const queryClient = useQueryClient();
-  const {
-    data: lists,
-    status,
-    error,
-  } = useQuery({
-    queryKey: ["lists", userId],
-    queryFn: () => getAllListsWithItems(userId),
-  });
-
   // create component states
   const [title, setTitle] = useState(listProp.title);
   const [isFocused, setIsFocused] = useState(false);
   const [isActive, setIsActive] = useState<HTMLElement | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
+  const [showMobileActions, setShowMobileActions] = useState(false);
 
+  // create required ref
+  const listRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
-  // const focusedOnce = useRef(false); // This ref is key to let a new list focus only once
 
   // fetch required function
-  const { listTitleMutation, pinListMutation, deleteListMutation } =
-    useListMutations();
-  const { reorderItemsMutation, addItemMutation } = useItemMutations();
+  const {
+    listTitleMutation,
+    pinListMutation,
+    recoverListMutation,
+    deleteListMutation,
+  } = useListMutations();
+  const { addItemMutation } = useItemMutations();
+  const { handleDragStart } = useListDnd();
+  const { handleDrop, handleDragOver, handleDragLeave } = useItemDnd();
 
-  const handleTitleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    const newTitle = e.currentTarget.textContent || "";
-    setTitle(newTitle);
-    setIsFocused(false);
-    if (newTitle !== listProp.title) {
-      listTitleMutation.mutate({
-        listId: listProp.id,
-        newTitle,
-      });
-    }
-  };
+  // create required functions
+  const handleTitleBlur = useCallback(
+    (e: React.FocusEvent<HTMLDivElement>) => {
+      const newTitle = e.currentTarget.textContent || "";
+      setTitle(newTitle);
+      setIsFocused(false);
+      if (newTitle !== listProp.title) {
+        listTitleMutation.mutate({
+          listId: listProp.id,
+          newTitle,
+        });
+      }
+    },
+    [setTitle, setIsFocused, listProp.title, listProp.id, listTitleMutation],
+  );
 
-  // Memoize the handler to prevent unnecessary re-renders
   const handleEditList = useCallback(() => {
-    const isMobile = viewportWidth < BREAKPOINT_WIDTH;
+    const useBotbar = viewportWidth < USE_BOTBAR_WIDTH;
     if (listProp.id === listId) {
       closeBotbar();
       closeRightSidebar();
@@ -100,7 +107,7 @@ export default function TodoList({
     } else {
       setBotListId(listProp.id);
       setRightListId(listProp.id);
-      if (isMobile) {
+      if (useBotbar) {
         openBotbar();
       } else {
         openRightSidebar();
@@ -118,107 +125,6 @@ export default function TodoList({
     closeBotbar,
   ]);
 
-  const handleDragStart = (e: DragEvent, listId: string) => {
-    e.dataTransfer.setData("type", "list");
-    e.dataTransfer.setData("listId", listId);
-  };
-
-  const handleDrop = (e: DragEvent) => {
-    if (e.dataTransfer.getData("type") !== "item") return;
-
-    e.preventDefault();
-
-    const dropListEl = e.currentTarget as HTMLElement;
-    clearIndicators(dropListEl, `[data-drop-item-id]`);
-    setIsActive(null);
-
-    // find target item info: itemId, srccListId, oldIndex
-    if (!lists) {
-      console.error("handleDrop failed: lists not found in cache");
-      return;
-    }
-    const itemId = e.dataTransfer.getData("itemId");
-    if (!itemId) {
-      console.error("handleDrop failed: itemId not found in dataTransfer");
-      return;
-    }
-    const targetItem = lists
-      .flatMap((list) => list.items)
-      .find((item) => item.id === itemId);
-    if (!targetItem) {
-      console.error("handleDrop failed: targetItem not found in cache");
-      return;
-    }
-    const srcListId = targetItem.listId;
-    const oldIndex = targetItem.position;
-
-    // find drop info (from nearest drop indicator): destListId, newIndex
-    const destListId = dropListEl.getAttribute("data-list-id");
-    if (!destListId) {
-      console.error("handleDrop failed: destListId not found");
-      return;
-    }
-
-    const indicators = getIndicators(e, `[data-drop-item-id]`);
-    let dropItemId: string | null = null;
-    const { element: nearestIndicator } = getNearestIndicator(e, indicators);
-    if (!nearestIndicator) {
-      console.error("handleDrop failed: nearestIndicator not found");
-      return;
-    }
-    dropItemId = nearestIndicator.getAttribute("data-drop-item-id");
-    if (!dropItemId) {
-      console.error("handleDrop failed: dropItemId not found");
-      return;
-    }
-    const dropList = lists.find((list) => list.id === destListId);
-    if (!dropList) {
-      console.error("handleDrop failed: dropList not found");
-      return;
-    }
-    let newIndex = dropList.items.length;
-    // cannot find dropItem if list length === 0
-    if (newIndex > 0 && dropItemId !== "last-indicator") {
-      const dropItem = dropList.items.find((item) => item.id === dropItemId);
-      if (!dropItem) {
-        console.error("handleDrop failed: dropItem not found in cache");
-        return;
-      }
-      newIndex = dropItem.position;
-    }
-    if (srcListId === destListId && newIndex > oldIndex) newIndex--;
-
-    console.log(
-      "Item moved: list",
-      srcListId,
-      " index",
-      oldIndex,
-      "=> list",
-      destListId,
-      " index",
-      newIndex,
-    );
-
-    reorderItemsMutation.mutate({
-      itemId,
-      srcListId,
-      destListId,
-      oldIndex,
-      newIndex,
-    });
-  };
-  const handleDragOver = (e: DragEvent) => {
-    if (e.dataTransfer.getData("type") !== "item") return;
-    e.preventDefault();
-    highlightIndicator(e, `[data-drop-item-id]`);
-    setIsActive(e.currentTarget as HTMLElement);
-  };
-  const handleDragLeave = (e: DragEvent) => {
-    if (e.dataTransfer.getData("type") !== "item") return;
-    clearIndicators(e.currentTarget as HTMLElement, `[data-drop-item-id]`);
-    setIsActive(null);
-  };
-
   // Sync title with prop to sync with list in sidebar
   useEffect(() => {
     setTitle(listProp.title);
@@ -235,27 +141,45 @@ export default function TodoList({
   useEffect(() => {
     // Set initial width
     setViewportWidth(window.innerWidth);
-
     // Handler for resize event
     const handleResize = () => {
       setViewportWidth(window.innerWidth);
     };
-
     // Add event listener
     window.addEventListener("resize", handleResize);
-
     // Clean up event listener
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+  }, [setViewportWidth]); // Empty dependency array means this runs once on mount and cleans up on unmount
+
+  // when clicking outside the list, list options disappear
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (listRef.current && !listRef.current.contains(event.target as Node)) {
+        setShowMobileActions(false);
+      }
+    };
+    // Add event listener to the document when the component mounts
+    document.addEventListener("mousedown", handleClickOutside);
+    // Clean up the event listener when the component unmounts
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [setShowMobileActions]); // Re-run effect if these dependencies change
 
   return (
     <div
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
+      ref={listRef}
+      onDrop={isReadOnly ? undefined : (e) => handleDrop(e, setIsActive)}
+      onDragOver={
+        isReadOnly ? undefined : (e) => handleDragOver(e, setIsActive)
+      }
+      onDragLeave={
+        isReadOnly ? undefined : (e) => handleDragLeave(e, setIsActive)
+      }
       data-list-id={listProp.id}
+      onTouchStart={(e) => setShowMobileActions(!showMobileActions)}
       className={`group/list relative mb-2 flex min-w-[250px] max-w-[250px] flex-col gap-0 rounded-lg border border-neutral-200 p-3 shadow-lg dark:border-neutral-300 ${
         isActive?.getAttribute("data-list-id") === listProp.id
           ? "bg-blue-50 dark:bg-neutral-700" // Dark mode for active list
@@ -265,10 +189,10 @@ export default function TodoList({
       <div className="mb-1 flex items-start justify-between">
         <motion.div
           ref={titleRef}
-          contentEditable="true"
+          contentEditable={!isReadOnly}
           suppressContentEditableWarning={true}
-          onFocus={(e) => setIsFocused(true)}
-          onBlur={handleTitleBlur}
+          onFocus={isReadOnly ? undefined : (e) => setIsFocused(true)}
+          onBlur={isReadOnly ? undefined : handleTitleBlur}
           className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold outline-none ${
             title === "" && !isFocused
               ? "text-gray-300 dark:text-neutral-600" // Dark mode for placeholder text
@@ -284,9 +208,9 @@ export default function TodoList({
 
         {/* list handle */}
         <div
-          draggable="true"
+          draggable={!isReadOnly}
           onDragStart={(e) => handleDragStart(e, listProp.id)}
-          className="list-drag-handle cursor-move"
+          className={`list-drag-handle ${isReadOnly ? "" : "cursor-move"}`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -313,7 +237,11 @@ export default function TodoList({
         {listProp.items.map((item, index) => (
           <div key={item.id} className="flex flex-col gap-1">
             <ItemDropIndicator itemId={item.id} />
-            <TodoItem itemProp={item} inSidebar={inSidebar} />
+            <TodoItem
+              itemProp={item}
+              inSidebar={inSidebar}
+              isReadOnly={isReadOnly}
+            />
             {index === listProp.items.length - 1 && (
               <ItemDropIndicator itemId={"last-indicator"} />
             )}
@@ -326,27 +254,33 @@ export default function TodoList({
       {/* pin list button */}
       <button
         onClick={() =>
-          pinListMutation.mutate({
-            listId: listProp.id,
-            newIsPinned: !listProp.isPinned,
-          })
+          isReadOnly
+            ? undefined
+            : pinListMutation.mutate({
+                listId: listProp.id,
+                newIsPinned: !listProp.isPinned,
+              })
         }
       >
         <LiaMapPinSolid
-          className={`absolute -top-4 left-[12.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white text-neutral-800 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100 ${
+          className={`absolute -top-4 left-[12.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white text-neutral-800 transition-opacity ${isReadOnly ? "cursor-default" : "group-hover/list:opacity-100"} dark:bg-neutral-800 dark:text-neutral-100 ${
             listProp.isPinned
-              ? "opacity-100" // Pinned state remains same if blue is desired
-              : "opacity-0" // Dark mode for unpinned icon background/text
+              ? "opacity-100"
+              : showMobileActions && listProp.deletedAt === null
+                ? "opacity-100"
+                : "opacity-0"
           }`}
         />
       </button>
       {/* edit list button */}
       <button onClick={() => handleEditList()}>
         <LuPen
-          className={`absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white p-1 text-neutral-800 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100 ${
+          className={`absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white p-1 text-neutral-800 transition-opacity ${isReadOnly ? "" : "group-hover/list:opacity-100"} dark:bg-neutral-800 dark:text-neutral-100 ${
             (isRightSidebarOpen || isBotbarOpen) && listId === listProp.id
               ? "opacity-100" // Active edit state remains same
-              : "opacity-0" // Dark mode for inactive edit icon
+              : showMobileActions && !isReadOnly
+                ? "opacity-100"
+                : "opacity-0" // Dark mode for inactive edit icon
           }`}
         />
       </button>
@@ -369,22 +303,39 @@ export default function TodoList({
         }
       >
         <IoAdd
-          className="absolute -top-4 left-[62.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white text-neutral-800 opacity-0 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100" // Dark mode for add item icon
+          className={`absolute -top-4 left-[62.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white text-neutral-800 transition-opacity ${isReadOnly ? "" : "group-hover/list:opacity-100"} dark:bg-neutral-800 dark:text-neutral-100 ${showMobileActions && listProp.deletedAt === null ? "opacity-100" : "opacity-0"}`} // Dark mode for add item icon
         />
       </button>
       {/* delete list button */}
       <button
         onClick={() => {
-          deleteListMutation.mutate({ listId: listProp.id });
+          if (!isReadOnly) {
+            deleteListMutation.mutate({ listId: listProp.id });
+          } else {
+            recoverListMutation.mutate({ listId: listProp.id });
+          }
           if (listId === listProp.id) {
             closeBotbar();
             closeRightSidebar();
           }
+          toast.custom((t) => (
+            <div
+              className={`rounded-lg border-neutral-100 bg-neutral-800 px-4 py-2 text-base text-neutral-100 shadow-lg dark:border-neutral-800 dark:bg-neutral-100 dark:text-neutral-800`}
+            >
+              {isReadOnly ? "List recovered" : "List moved to trash"}
+            </div>
+          ));
         }}
       >
-        <LuTrash
-          className="absolute -top-4 left-[87.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white p-1 text-neutral-800 opacity-0 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100" // Dark mode for delete icon
-        />
+        {isReadOnly ? (
+          <CgRedo
+            className={`absolute -top-4 left-[87.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white text-neutral-800 opacity-0 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100 ${showMobileActions ? "opacity-100" : "opacity-0"}`} // Dark mode for delete icon
+          />
+        ) : (
+          <LuTrash
+            className={`absolute -top-4 left-[87.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white p-1 text-neutral-800 opacity-0 transition-opacity group-hover/list:opacity-100 dark:bg-neutral-800 dark:text-neutral-100 ${showMobileActions ? "opacity-100" : "opacity-0"}`} // Dark mode for delete icon
+          />
+        )}
       </button>
     </div>
   );

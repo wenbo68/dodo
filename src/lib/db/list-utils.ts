@@ -1,6 +1,16 @@
 "use server";
 
-import { asc, eq, sql, and, not, is } from "drizzle-orm";
+import {
+  asc,
+  eq,
+  sql,
+  and,
+  not,
+  is,
+  isNull,
+  isNotNull,
+  desc,
+} from "drizzle-orm";
 import { db } from "../../server/db";
 import { items, lists } from "../../server/db/schema";
 
@@ -26,7 +36,7 @@ export async function getListWithItems(listId: string) {
 
 export async function getAllListsWithItems(userId: string) {
   return await db.query.lists.findMany({
-    where: eq(lists.userId, userId),
+    where: and(eq(lists.userId, userId), isNull(lists.deletedAt)),
     with: {
       items: {
         orderBy: [asc(items.position)],
@@ -38,13 +48,29 @@ export async function getAllListsWithItems(userId: string) {
 
 export async function getListsWithItems(userId: string, isPinned: boolean) {
   return await db.query.lists.findMany({
-    where: and(eq(lists.userId, userId), eq(lists.isPinned, isPinned)),
+    where: and(
+      eq(lists.userId, userId),
+      eq(lists.isPinned, isPinned),
+      isNull(lists.deletedAt),
+    ),
     with: {
       items: {
         orderBy: [asc(items.position)],
       },
     },
     orderBy: [asc(lists.position)],
+  });
+}
+
+export async function getDeletedListsWithItems(userId: string) {
+  return await db.query.lists.findMany({
+    where: and(eq(lists.userId, userId), isNotNull(lists.deletedAt)), // Only trashed lists
+    with: {
+      items: {
+        orderBy: [asc(items.position)], // Items within a trashed list still ordered
+      },
+    },
+    orderBy: [desc(lists.deletedAt)], // Order by when they were deleted, newest first in trash
   });
 }
 

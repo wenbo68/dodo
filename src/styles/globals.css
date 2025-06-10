@@ -4,13 +4,18 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-  --primary: #fed835;
-  --secondary: #304fff;
+  --backgrounddark: #262626;
 
-  --primary-accent: #e5c230;
-  --foreground-accent: #454545;
-  --hero-background: #f3f3f5;
+  --foreground: #262626;
+  --foregrounddark: #ffffff;
+  --foregroundaccent: #737373;
+
+  --primary: #3b82f6;
+  --primary-accent: #60a5fa;
+
+  --secondary: #3b82f6;
+
+  --hero-background: #ffffff;
 }
 
 html {
@@ -56,9 +61,4 @@ h6 {
 
 .benefit-section:last-of-type > div {
   @apply mb-10;
-}
-
-.checkbox-container {
-  display: flex;
-  align-items: center;
 }

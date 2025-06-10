@@ -2,6 +2,7 @@ import Link from "next/link";
 // import AddList from "@/components/dashboard/add-list";
 import {
   getAllListsWithItems,
+  getDeletedListsWithItems,
   // getListsWithItems,
 } from "~/lib/db/list-utils";
 import { auth, signIn } from "~/server/auth";
@@ -20,6 +21,7 @@ import {
 import Topbar from "@/components/dashboard/bars/topbar";
 import LeftSidebar from "@/components/dashboard/bars/left-sidebar";
 import Botbar from "@/components/dashboard/bars/botbar";
+import { Toaster } from "react-hot-toast"; // Import Toaster
 
 export default async function Layout({
   children,
@@ -29,13 +31,14 @@ export default async function Layout({
   const session = await auth();
   if (!session || !session.user) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <button className="w-20 rounded-lg border shadow-md">
+      <div className="flex min-h-screen items-center justify-center dark:bg-neutral-800">
+        <button className="w-20 rounded-lg border shadow-md dark:border-neutral-100 dark:bg-neutral-800">
           <Link
             href={{
               pathname: "/api/auth/signin",
               query: { callbackUrl: "/dashboard" },
             }}
+            className="dark:text-white"
           >
             Sign In
           </Link>
@@ -54,6 +57,11 @@ export default async function Layout({
   await queryClient.prefetchQuery({
     queryKey: ["userLists", session.user.id], // Use the same key as you will on the client
     queryFn: () => getAllListsWithItems(session.user.id), // Call your server data fetching function
+  });
+
+  await queryClient.prefetchQuery({
+    queryKey: ["deletedLists", session.user.id], // Key for trashed lists
+    queryFn: () => getDeletedListsWithItems(session.user.id), // Fetch trashed lists
   });
 
   // 3. Get the dehydrated state from the server-side queryClient
@@ -86,6 +94,7 @@ export default async function Layout({
         <LeftSidebar />
         <RightSidebar /> {/* Make sure EditListSidebar is 'use client' */}
         {children} {/* Your page.tsx content */}
+        <Toaster position="bottom-center" />
       </AppProvider>
     </div>
   );
