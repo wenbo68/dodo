@@ -5,14 +5,13 @@ import { useBotbar } from "@/components/context/botbar-context";
 import { useRightSidebar } from "@/components/context/right-sidebar-context";
 import { TodoGrid } from "@/components/dashboard/todo/todo-grid";
 import { getDeletedListsWithItems } from "@/lib/db/list-utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Page() {
   // fetch requied client-side states
   const { userId } = useAuth();
 
   // fetch required client-side cache
-  const queryClient = useQueryClient();
   const {
     data: lists,
     status,

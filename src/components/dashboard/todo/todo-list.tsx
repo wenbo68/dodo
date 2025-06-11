@@ -81,7 +81,7 @@ export default function TodoList({
 
   const handleTitleBlur = useCallback(
     (e: React.FocusEvent<HTMLDivElement>) => {
-      const newTitle = e.currentTarget.textContent || "";
+      const newTitle = e.currentTarget.textContent ?? "";
       setTitle(newTitle);
       setIsFocused(false);
       if (newTitle !== listProp.title) {

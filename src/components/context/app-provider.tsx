@@ -12,7 +12,7 @@ import React from "react";
 import { RightSidebarProvider } from "./right-sidebar-context";
 import { AuthProvider } from "./auth-context";
 import { LeftSidebarProvider } from "./left-sidebar-context";
-import { Session } from "next-auth";
+import type { Session } from "next-auth";
 import { BotbarProvider } from "./botbar-context";
 
 // Create a client

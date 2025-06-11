@@ -83,7 +83,7 @@ export const useListMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },
@@ -94,7 +94,7 @@ export const useListMutations = () => {
       await updateListWithItems(listProp);
     },
     onError: (error, prop, context) => {
-      queryClient.invalidateQueries({ queryKey: ["lists", userId] });
+      void queryClient.invalidateQueries({ queryKey: ["lists", userId] });
       console.error("updateListMutation onError: ", error);
     },
   });
@@ -199,10 +199,10 @@ export const useListMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["deletedLists", userId],
       });
     },
@@ -308,10 +308,10 @@ export const useListMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["deletedLists", userId],
       });
     },
@@ -382,7 +382,7 @@ export const useListMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },
@@ -463,7 +463,7 @@ export const useListMutations = () => {
 
           // Step 2: Create a new array of lists, incorporating the updated target list
           // and immutably updating positions of other affected lists.
-          let newLists = oldLists.map((list) => {
+          const newLists = oldLists.map((list) => {
             // If it's the target list, return the already updated version
             if (list.id === targetList.id) {
               return updatedTargetList;
@@ -540,7 +540,7 @@ export const useListMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },
@@ -579,7 +579,7 @@ export const useListMutations = () => {
           }
 
           // Create a new array to avoid direct mutation of oldLists
-          let updatedLists = oldLists.map((list) => {
+          const updatedLists = oldLists.map((list) => {
             if (list.id === listId) {
               // Update the target list's pinned status
               return { ...list, isPinned: newIsPinned, position: -1 };
@@ -632,7 +632,7 @@ export const useListMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },

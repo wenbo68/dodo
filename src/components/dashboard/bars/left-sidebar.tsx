@@ -57,7 +57,7 @@ export default function LeftSidebar() {
             {session.user.image && (
               <Image
                 src={session.user.image}
-                alt={session.user.name || "Profile Photo"}
+                alt={session.user.name ?? "Profile Photo"}
                 fill
                 sizes="32px"
                 className="object-cover"

@@ -11,7 +11,7 @@ export function DragDropTouchProvider({
   useEffect(() => {
     // Dynamically import the polyfill ONLY when the component mounts on the client
     // This ensures it never runs on the server.
-    import("drag-drop-touch");
+    void import("drag-drop-touch"); // Add 'void' here
   }, []); // Empty dependency array means this runs once after the initial render
 
   return <>{children}</>;

@@ -81,7 +81,10 @@ export const useItemDnd = () => {
 
     const indicators = getIndicators(e, `[data-drop-item-id]`);
     let dropItemId: string | null = null;
-    const { element: nearestIndicator } = getNearestIndicator(e, indicators);
+    const { element: nearestIndicator } = getNearestIndicator(
+      e,
+      indicators as HTMLElement[],
+    );
     if (!nearestIndicator) {
       console.error("handleDrop failed: nearestIndicator not found");
       return;

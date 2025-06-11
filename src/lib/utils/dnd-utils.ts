@@ -2,7 +2,7 @@ import { DragEvent } from "react";
 
 export const getIndicators = (e: DragEvent, id: string) => {
   const targetGrid: HTMLElement | null = e.currentTarget as HTMLElement;
-  return Array.from(targetGrid.querySelectorAll(id) as NodeListOf<HTMLElement>);
+  return Array.from(targetGrid.querySelectorAll(id));
 };
 
 export const getNearestIndicator = (
@@ -54,10 +54,16 @@ export const clearIndicators = (el: HTMLElement | null, id: string) => {
     const indicators = Array.from(
       el.querySelectorAll(
         id, // Target all indicators in the grid
-      ) as NodeListOf<HTMLElement>,
+      ),
     );
     indicators.forEach((i) => {
-      i.style.opacity = "0"; // Hide all indicators
+      // Assert 'i' as HTMLElement
+      if (i instanceof HTMLElement) {
+        // Safer check before assertion
+        i.style.opacity = "0"; // Hide all indicators
+      }
+      // Or, if you are absolutely sure all queried elements will be HTMLElements:
+      // (i as HTMLElement).style.opacity = "0";
     });
   }
 };
@@ -66,7 +72,7 @@ export const highlightIndicator = (e: DragEvent, id: string) => {
   const indicators = getIndicators(e, id);
   clearIndicators(e.currentTarget as HTMLElement, id); // Clear highlights in the current grid
 
-  const { element } = getNearestIndicator(e, indicators);
+  const { element } = getNearestIndicator(e, indicators as HTMLElement[]);
   if (!element) {
     console.error("hightlightIndicator failed: nearestIndicator not found");
     return;

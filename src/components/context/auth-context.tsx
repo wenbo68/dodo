@@ -1,8 +1,8 @@
 // src/contexts/SidebarContext.tsx
 "use client"; // Context providers with state must be Client Components
 
-import { Session } from "next-auth";
-import React, { createContext, useState, useContext, ReactNode } from "react";
+import type { Session } from "next-auth";
+import React, { createContext, useContext, ReactNode } from "react";
 
 interface AuthContextType {
   session: Session;

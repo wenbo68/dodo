@@ -52,7 +52,7 @@ export default function TodoItem({
       console.log("blurred");
       setIsFocused(false);
 
-      const newDescription = e.currentTarget.textContent || "";
+      const newDescription = e.currentTarget.textContent ?? "";
       setDescription(newDescription);
       if (newDescription !== itemProp.description) {
         itemDescriptionMutation.mutate({

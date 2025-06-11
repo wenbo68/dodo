@@ -5,7 +5,7 @@ import {
   getDeletedListsWithItems,
   // getListsWithItems,
 } from "~/lib/db/list-utils";
-import { auth, signIn } from "~/server/auth";
+import { auth } from "~/server/auth";
 import { AppProvider } from "@/components/context/app-provider";
 import RightSidebar from "@/components/dashboard/bars/right-sidebar";
 import React from "react";
@@ -16,7 +16,7 @@ import {
   dehydrate, // Function to dehydrate the state
   // Use HydrationBoundary in v5+, not Hydrate
   // Use Hydrate in v4
-  HydrationBoundary,
+  // HydrationBoundary,
 } from "@tanstack/react-query";
 import Topbar from "@/components/dashboard/bars/topbar";
 import LeftSidebar from "@/components/dashboard/bars/left-sidebar";

@@ -78,7 +78,7 @@ export const useItemMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },
@@ -90,7 +90,7 @@ export const useItemMutations = () => {
     },
     onError: (error, prop, context) => {
       // refetch
-      queryClient.invalidateQueries({ queryKey: ["lists", userId] });
+      void queryClient.invalidateQueries({ queryKey: ["lists", userId] });
       console.error("updateItemMutation onError: ", error);
     },
   });
@@ -182,7 +182,7 @@ export const useItemMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },
@@ -258,7 +258,7 @@ export const useItemMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },
@@ -334,7 +334,7 @@ export const useItemMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },
@@ -412,7 +412,7 @@ export const useItemMutations = () => {
               return oldLists;
             }
 
-            let newItems = targetList.items.map((item) => {
+            const newItems = targetList.items.map((item) => {
               if (item.id === targetItem.id) {
                 return { ...item, position: newIndex };
               } else if (
@@ -548,7 +548,7 @@ export const useItemMutations = () => {
     },
     onSettled: () => {
       // invalidate and refetch
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["lists", userId],
       });
     },

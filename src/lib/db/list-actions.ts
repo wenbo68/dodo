@@ -66,7 +66,7 @@ export async function recoverList(listId: string) {
       where: and(eq(lists.id, listId), isNotNull(lists.deletedAt)),
     }),
   ]);
-  if (!targetList || !targetList.deletedAt)
+  if (!targetList)
     throw new Error("recoverList() failed: could not find target list in db");
   try {
     await db.transaction(async (tx) => {
@@ -169,13 +169,13 @@ export async function updateListWithItems(listProp: ListWithItems) {
 
   try {
     if (listProp.title !== targetList.title) {
-      updateListTitle(listProp.id, listProp.title);
+      await updateListTitle(listProp.id, listProp.title);
     }
     if (
       listProp.position !== targetList.position ||
       listProp.isPinned !== targetList.isPinned
     ) {
-      updateListPositionAndIsPinned(
+      await updateListPositionAndIsPinned(
         listProp.userId,
         targetList.isPinned,
         listProp.isPinned,
@@ -184,7 +184,7 @@ export async function updateListWithItems(listProp: ListWithItems) {
       );
     }
     listProp.items.forEach((item) => {
-      updateItem(item);
+      void updateItem(item);
     });
   } catch (error) {
     throw new Error("updateListWithItems() failed: " + String(error));
@@ -226,14 +226,7 @@ export async function addListWithItems(
 
       //add given items to new list
       if (listProp.items.length > 0) {
-        // await tx.insert(items).values(
-        //   itemsProp.map((item, index) => ({
-        //     listId: newList.id,
-        //     description: item.description,
-        //     position: index,
-        //   })),
-        // );
-        listProp.items.forEach((item) => addItem(item));
+        listProp.items.forEach((item) => void addItem(item));
       }
 
       return newList.id;

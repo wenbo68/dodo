@@ -4,21 +4,19 @@ import { db } from "~/server/db";
 import { items } from "~/server/db/schema";
 import { Item } from "@/types";
 
-export async function addItem(itemProp: Item): Promise<string> {
+export async function addItem(itemProp: Item) {
   if (itemProp.position < 0)
     throw new Error("addItem() failed: item position cannot be less than 0");
   try {
-    const [newList] = await db
-      .insert(items)
-      .values({
-        id: itemProp.id,
-        listId: itemProp.listId,
-        description: itemProp.description,
-        isComplete: itemProp.isComplete,
-        position: itemProp.position,
-      })
-      .returning();
-    return newList.id;
+    await db.insert(items).values({
+      id: itemProp.id,
+      listId: itemProp.listId,
+      description: itemProp.description,
+      isComplete: itemProp.isComplete,
+      position: itemProp.position,
+    });
+    // .returning();
+    // return newList.id;
   } catch (error) {
     throw new Error("addItem() failed: " + String(error));
   }
@@ -36,16 +34,16 @@ export async function updateItem(itemProp: Item) {
 
   try {
     if (itemProp.isComplete !== targetItem.isComplete) {
-      updateItemIsComplete(itemProp.id, itemProp.isComplete);
+      await updateItemIsComplete(itemProp.id, itemProp.isComplete);
     }
     if (itemProp.description !== targetItem.description) {
-      updateItemDescription(itemProp.id, itemProp.description);
+      await updateItemDescription(itemProp.id, itemProp.description);
     }
     if (
       itemProp.position !== targetItem.position ||
       itemProp.listId !== targetItem.listId
     ) {
-      updateItemPositionAndListId(
+      await updateItemPositionAndListId(
         targetItem.listId,
         itemProp.listId,
         targetItem.position,
