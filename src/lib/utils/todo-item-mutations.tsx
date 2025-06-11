@@ -11,6 +11,7 @@ import {
   updateItemIsComplete,
   updateItemPositionAndListId,
 } from "../db/item-actions";
+import toast from "react-hot-toast";
 
 export const useItemMutations = () => {
   // Access client-side states and utilities using other hooks
@@ -61,6 +62,14 @@ export const useItemMutations = () => {
       return { originalLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Add item failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -73,84 +82,8 @@ export const useItemMutations = () => {
         queryKey: ["lists", userId],
       });
     },
-    // onSuccess: (realItemId, prop, context) => {
-    //   //if no db write => no onSuccess
-    //   if (!realItemId) return;
-
-    //   const { itemProp } = prop; // Destructure listId from prop
-    //   const { tempItemId } = context || {}; // Destructure from context
-
-    //   // 1. find the item in the cache
-    //   queryClient.setQueryData(
-    //     ["lists", userId],
-    //     (oldLists: ListWithItems[]) => {
-    //       if (!oldLists) {
-    //         console.error(
-    //           "addItemMutation onSuccess failed: oldLists not found in cache",
-    //         );
-    //         return oldLists;
-    //       }
-    //       // Find the target list
-    //       const targetList = oldLists.find(
-    //         (list) => list.id === itemProp.listId,
-    //       );
-    //       if (!targetList) {
-    //         console.error(
-    //           "addItemMutation onSuccess failed: targetList not found in cache",
-    //         );
-    //         return oldLists;
-    //       }
-
-    //       const tempItem = targetList.items.find(
-    //         (item) => item.id === tempItemId,
-    //       );
-
-    //       // 2. if the item is gone from the cache => delete the item in db
-    //       if (!tempItem) {
-    //         // If the item is not found in the cache, delete it from the DB
-    //         deleteItemMutation.mutate({
-    //           listId: targetList.id,
-    //           itemId: realItemId,
-    //           updateCache: false,
-    //         });
-    //         return oldLists; // Return oldLists as id cannot be updated
-    //       }
-
-    //       // 3. If the item is still there, update the item in cache to have the real ID
-    //       return oldLists.map((oldList) =>
-    //         oldList.id === itemProp.listId
-    //           ? {
-    //               ...oldList,
-    //               items: oldList.items.map((item) =>
-    //                 item.id === tempItemId ? { ...item, id: realItemId } : item,
-    //               ),
-    //             }
-    //           : oldList,
-    //       );
-    //     },
-    //   );
-
-    //   // find target item in cache (now using the real id)
-    //   const targetItem = queryClient
-    //     .getQueryData<ListWithItems[]>(["lists", userId])
-    //     ?.find((list) => list.id === itemProp.listId)
-    //     ?.items.find((item) => item.id === realItemId);
-    //   if (!targetItem) {
-    //     console.error(
-    //       "addItemMutation onSuccess failed: targetItem not found in cache",
-    //     );
-    //     return;
-    //   }
-
-    //   //4. then do db write for isComplete, description, position/listId
-    //   // but if the item's listId is temp => don't update db
-    //   // instead wait for list to update the item in db after listId resolves
-    //   if (targetItem.listId.startsWith("temp-")) return;
-    //   updateItemMutation.mutate(targetItem);
-    // },
   });
 
-  // only for syncing db with cache => only edits db
   const updateItemMutation = useMutation({
     mutationFn: async (itemProp: Item) => {
       await updateItem(itemProp);
@@ -162,12 +95,6 @@ export const useItemMutations = () => {
     },
   });
 
-  // scenarios: (1/2/3 are the same in terms of implementation)
-  // 1. delete temp item from temp list: delete in cache (synced when realListId is returned)
-  // 2. delete temp item from real list: delete in cache (synced when realItemId is returned)
-  // 3. delete real item from temp list: delete in cache (synced when realListId is returned)
-  // 4. delete real item from real list: delete in cache and db
-  // 5. syncing cache and db a/f return of realListId/realItemId: delete in db
   const deleteItemMutation = useMutation({
     mutationFn: async ({
       listId,
@@ -231,10 +158,6 @@ export const useItemMutations = () => {
                 };
               }),
           };
-          // //move items below the deleted item up by 1
-          // newList.items.forEach((item) => {
-          //   if (item.position > targetItem.position) item.position--;
-          // });
           return oldLists.map((oldList) =>
             oldList.id === listId ? newList : oldList,
           );
@@ -243,6 +166,14 @@ export const useItemMutations = () => {
       return { originalLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Delete list failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -311,6 +242,14 @@ export const useItemMutations = () => {
       return { originalLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Check item failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -379,6 +318,14 @@ export const useItemMutations = () => {
       return { originalLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Edit item description failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -393,12 +340,6 @@ export const useItemMutations = () => {
     },
   });
 
-  // scenarios: when is srcList synced?
-  // 1. all real => db write and cache update
-  // 2. one temp => cache update (db will be synced when temp resolves)
-  // no need to update db for real list/item in case 2
-  // (b/c they will be resolved as well during the db write after temp resolves)
-  // 3. N/A => no used in syncing
   const reorderItemsMutation = useMutation({
     mutationFn: async ({
       itemId,
@@ -591,6 +532,14 @@ export const useItemMutations = () => {
       return { originalLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Reorder items failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -605,7 +554,6 @@ export const useItemMutations = () => {
     },
   });
 
-  // IMPORTANT: Return all the mutation hooks so they can be used by components
   return {
     addItemMutation,
     updateItemMutation,

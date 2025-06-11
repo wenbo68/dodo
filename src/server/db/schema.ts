@@ -64,7 +64,7 @@ export const items = createTable(
       .$defaultFn(() => crypto.randomUUID()),
     listId: varchar("list_id", { length: 255 })
       .notNull()
-      .references(() => lists.id),
+      .references(() => lists.id, { onDelete: "cascade" }), // <--- ADD THIS HERE
     description: text("description").notNull(),
     position: integer("position").default(0).notNull(),
     isComplete: boolean("is_complete").default(false).notNull(),

@@ -67,11 +67,19 @@ export const useListMutations = () => {
       return { originalLists };
     },
     onError: (error, listProp, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Add list failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
       }
-      console.error("AddListMutation onError failed:", error);
+      console.error("AddListMutation onError:", error);
     },
     onSettled: () => {
       // invalidate and refetch
@@ -169,6 +177,14 @@ export const useListMutations = () => {
       return { originalLists, originalDeletedLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Restore list failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -270,6 +286,14 @@ export const useListMutations = () => {
       return { originalLists, originalDeletedLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Delete list failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -342,6 +366,14 @@ export const useListMutations = () => {
       return { originalLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Edit list title failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -492,6 +524,14 @@ export const useListMutations = () => {
       return { originalLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Reorder lists failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
@@ -576,6 +616,14 @@ export const useListMutations = () => {
       return { originalLists };
     },
     onError: (error, prop, context) => {
+      // Show toast notification
+      toast.custom((t) => (
+        <div
+          className={`rounded-lg bg-red-500 px-4 py-2 text-base text-neutral-100 shadow-lg`}
+        >
+          {`Pin list failed. Reverting UI. Error: ${error.message}`}
+        </div>
+      ));
       // Rollback to the original lists in case of error
       if (context?.originalLists) {
         queryClient.setQueryData(["lists", userId], context.originalLists);
