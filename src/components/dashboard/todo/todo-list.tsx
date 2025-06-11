@@ -192,7 +192,7 @@ export default function TodoList({
         isActive?.getAttribute("data-list-id") === listProp.id
           ? "bg-blue-50 dark:bg-neutral-700" // Dark mode for active list
           : "bg-white dark:bg-neutral-800" // Dark mode for inactive list
-      }`}
+      } ${isReadOnly ? "opacity-50" : "opacity-100"}`}
     >
       <div className="mb-1 flex items-start justify-between">
         <div

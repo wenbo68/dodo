@@ -125,6 +125,28 @@ export async function deleteList(listId: string) {
   }
 }
 
+export async function cleanupTrash() {
+  console.log("Running cleanup for old deleted lists...");
+
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Calculate date 7 days ago
+
+    // Delete lists where deletedAt is older than one week
+    // Due to onDelete: 'cascade' on the items table, associated items will also be deleted.
+    const result = await db
+      .delete(lists)
+      .where(and(lt(lists.deletedAt, oneWeekAgo), isNotNull(lists.deletedAt)))
+      .returning({ id: lists.id }); // Optionally return deleted IDs
+
+    console.log(`Cleaned up ${result.length} old deleted lists.`);
+    return { success: true, deletedCount: result.length };
+  } catch (error) {
+    console.error("Error during old deleted lists cleanup:", error);
+    return { success: false, error: "Failed to cleanup old lists." };
+  }
+}
+
 export async function updateListTitle(listId: string, newTitle: string) {
   try {
     await db.update(lists).set({ title: newTitle }).where(eq(lists.id, listId));
