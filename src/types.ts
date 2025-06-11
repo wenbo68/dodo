@@ -5,7 +5,7 @@ import { z } from "zod";
 export type List = InferSelectModel<typeof lists>;
 export type Item = InferSelectModel<typeof items> & {
   isNew?: boolean;
-  inSidebar?: boolean;
+  loc?: string; // "page", "sidebar", or "botbar"
 };
 export type ListWithItems = List & { items: Item[]; isNew?: boolean };
 

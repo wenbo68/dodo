@@ -25,6 +25,7 @@ export default function AddListButton() {
           isPinned: false,
           createdAt: new Date(Date.now()),
           updatedAt: new Date(Date.now()),
+          deletedAt: null,
           items: [],
           isNew: true,
         })

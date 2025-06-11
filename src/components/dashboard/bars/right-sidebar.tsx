@@ -24,9 +24,11 @@ export default function RightSidebar() {
 
   return (
     <div
-      className={`fixed right-0 top-0 h-full w-80 overflow-y-auto bg-white px-6 py-10 dark:bg-neutral-800 ${isRightSidebarOpen ? "translate-x-0" : "translate-x-80"}`}
+      className={`fixed right-0 top-0 h-full w-80 overflow-y-auto bg-blue-50 px-6 py-10 dark:bg-neutral-700 ${isRightSidebarOpen ? "translate-x-0" : "translate-x-80"}`}
     >
-      {list && <TodoList listProp={list} inSidebar={true} />}
+      <div className="flex justify-center">
+        {list && <TodoList listProp={list} loc={"sidebar"} />}
+      </div>
     </div>
   );
 }

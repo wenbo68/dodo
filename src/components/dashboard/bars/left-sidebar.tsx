@@ -43,7 +43,7 @@ export default function LeftSidebar() {
       {/* Overlay */}
       {isLeftSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black opacity-50" // Darker opacity in dark mode
+          className="fixed inset-0 z-40 bg-transparent opacity-50" // Darker opacity in dark mode
           onClick={closeLeftSidebar} // Close sidebar when overlay is clicked
         ></div>
       )}

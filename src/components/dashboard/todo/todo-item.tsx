@@ -10,11 +10,11 @@ import { set } from "zod";
 
 export default function TodoItem({
   itemProp,
-  inSidebar,
+  loc,
   isReadOnly,
 }: {
   itemProp: Item;
-  inSidebar: boolean;
+  loc: string; // "page", "sidebar", or "botbar"
   isReadOnly: boolean;
 }) {
   const {
@@ -35,8 +35,21 @@ export default function TodoItem({
   const { handleDragStart } = useItemDnd();
 
   // create required functions
+  const handleOnFocus = useCallback(() => {
+    if (descriptionRef.current) {
+      console.log("focused");
+      descriptionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      });
+    }
+    setIsFocused(true);
+  }, [setIsFocused]);
+
   const handleDescriptionBlur = useCallback(
     (e: React.FocusEvent<HTMLDivElement>) => {
+      console.log("blurred");
       setIsFocused(false);
 
       const newDescription = e.currentTarget.textContent || "";
@@ -57,26 +70,15 @@ export default function TodoItem({
     ],
   );
 
-  const adjustTextareaHeight = (element: HTMLTextAreaElement | null) => {
-    if (element) {
-      element.style.height = "auto"; // Reset height to recalculate scrollHeight
-      element.style.height = `${element.scrollHeight}px`; // Set height based on content
-    }
-  };
-
   useEffect(() => {
     setDescription(itemProp.description);
   }, [itemProp.description]);
 
   useEffect(() => {
-    if (
-      itemProp.isNew &&
-      itemProp.inSidebar === inSidebar &&
-      descriptionRef.current
-    ) {
+    if (itemProp.isNew && itemProp.loc === loc && descriptionRef.current) {
       descriptionRef.current.focus();
     }
-  }, [itemProp.isNew, itemProp.inSidebar, inSidebar, descriptionRef]);
+  }, [itemProp.isNew, itemProp.loc, loc]);
 
   return (
     <li data-item-id={itemProp.id} className="group flex gap-1">
@@ -132,20 +134,20 @@ export default function TodoItem({
         </span>
       </label>
       {/* Item description: becomes textarea when editing*/}
-      <motion.div
+      <div
         ref={descriptionRef}
         contentEditable={!isReadOnly}
         suppressContentEditableWarning={true}
-        onFocus={isReadOnly ? undefined : (e) => setIsFocused(true)}
+        onFocus={isReadOnly ? undefined : handleOnFocus}
         onBlur={handleDescriptionBlur}
         className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-sm font-medium outline-none ${
           itemProp.isComplete
             ? "text-neutral-300 line-through dark:text-neutral-600" // Completed item text in dark mode
             : "text-neutral-800 dark:text-neutral-100" // Normal item text in dark mode
-        }`}
+        } ${isReadOnly ? "cursor-default" : "cursor-text"}`}
       >
         {description}
-      </motion.div>
+      </div>
       <button
         onClick={() =>
           deleteItemMutation.mutate({

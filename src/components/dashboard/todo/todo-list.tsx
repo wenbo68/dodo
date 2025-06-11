@@ -2,44 +2,29 @@
 
 import TodoItem from "./todo-item";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MdOutlinePlaylistAdd, MdOutlineEditNote } from "react-icons/md";
-import { RxTrash } from "react-icons/rx";
 import { LiaMapPinSolid } from "react-icons/lia";
-import Sortable from "sortablejs";
 import { ListWithItems } from "@/types";
 import { useListMutations } from "@/lib/utils/todo-list-mutations";
 import { useItemMutations } from "@/lib/utils/todo-item-mutations";
 import { v4 } from "uuid";
-import { DragEvent } from "react";
 import { ItemDropIndicator } from "./drop-indicator";
-import {
-  clearIndicators,
-  getIndicators,
-  getNearestIndicator,
-  highlightIndicator,
-} from "@/lib/utils/dnd-utils";
-import { useAuth } from "../../context/auth-context";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getAllListsWithItems } from "@/lib/db/list-utils";
 import { useRightSidebar } from "../../context/right-sidebar-context";
-import { motion } from "framer-motion";
 import { useBotbar } from "../../context/botbar-context";
-import { LuPen, LuPlus, LuTrash } from "react-icons/lu";
+import { LuPen, LuTrash } from "react-icons/lu";
 import { IoAdd } from "react-icons/io5";
 import { useItemDnd } from "@/lib/utils/todo-item-dnd";
 import { useListDnd } from "@/lib/utils/todo-list-dnd";
 import { CgRedo } from "react-icons/cg";
 import toast from "react-hot-toast";
-import { recoverList } from "@/lib/db/list-actions";
 
 const USE_BOTBAR_WIDTH = 670;
 
 export default function TodoList({
   listProp,
-  inSidebar,
+  loc,
 }: {
   listProp: ListWithItems;
-  inSidebar: boolean;
+  loc: string;
 }) {
   // variables
   const isReadOnly = listProp.deletedAt !== null;
@@ -49,13 +34,14 @@ export default function TodoList({
     isRightSidebarOpen,
     closeRightSidebar,
     openRightSidebar,
-    listId,
+    listId: rightListId,
     setListId: setRightListId,
   } = useRightSidebar();
   const {
     isBotbarOpen,
     closeBotbar,
     openBotbar,
+    listId: botListId,
     setListId: setBotListId,
   } = useBotbar();
 
@@ -82,6 +68,17 @@ export default function TodoList({
   const { handleDrop, handleDragOver, handleDragLeave } = useItemDnd();
 
   // create required functions
+  const handleOnFocus = useCallback(() => {
+    if (titleRef.current) {
+      titleRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      });
+    }
+    setIsFocused(true);
+  }, [setIsFocused]);
+
   const handleTitleBlur = useCallback(
     (e: React.FocusEvent<HTMLDivElement>) => {
       const newTitle = e.currentTarget.textContent || "";
@@ -99,30 +96,40 @@ export default function TodoList({
 
   const handleEditList = useCallback(() => {
     const useBotbar = viewportWidth < USE_BOTBAR_WIDTH;
-    if (listProp.id === listId) {
-      closeBotbar();
-      closeRightSidebar();
-      setBotListId("");
-      setRightListId("");
-    } else {
-      setBotListId(listProp.id);
-      setRightListId(listProp.id);
+    if (
+      loc === "page" &&
+      listProp.id !== rightListId &&
+      listProp.id !== botListId
+    ) {
+      // click edit in page AND list is not in edit mode => open bot or sidebar
       if (useBotbar) {
+        setBotListId(listProp.id);
         openBotbar();
       } else {
+        setRightListId(listProp.id);
         openRightSidebar();
       }
+    } else if (loc === "sidebar" || listProp.id === rightListId) {
+      // click edit in sidebar OR click edit in page (but the list is in edit mode) => clear and close sidebar
+      closeRightSidebar();
+      setRightListId("");
+    } else if (loc === "botbar" || listProp.id === botListId) {
+      // click edit in botbar OR click edit in page (but the list is in edit mode) => clear and close botbar
+      closeBotbar();
+      setBotListId("");
     }
   }, [
+    viewportWidth,
+    loc,
     listProp.id,
-    listId,
+    rightListId,
+    botListId,
     setBotListId,
     setRightListId,
-    viewportWidth,
-    openRightSidebar,
-    closeRightSidebar,
     openBotbar,
+    openRightSidebar,
     closeBotbar,
+    closeRightSidebar,
   ]);
 
   // Sync title with prop to sync with list in sidebar
@@ -132,10 +139,11 @@ export default function TodoList({
 
   // Handle initial focus for new lists only once
   useEffect(() => {
-    if (listProp.isNew && !inSidebar && titleRef.current) {
+    if (listProp.isNew && loc === "page" && titleRef.current) {
+      // if list is new and in page, focus on title
       titleRef.current.focus();
     }
-  }, [listProp.isNew, inSidebar, titleRef]);
+  }, [listProp.isNew, loc, titleRef]);
 
   // Effect to get initial viewport width and listen for resize events
   useEffect(() => {
@@ -187,24 +195,24 @@ export default function TodoList({
       }`}
     >
       <div className="mb-1 flex items-start justify-between">
-        <motion.div
+        <div
           ref={titleRef}
           contentEditable={!isReadOnly}
           suppressContentEditableWarning={true}
-          onFocus={isReadOnly ? undefined : (e) => setIsFocused(true)}
+          onFocus={isReadOnly ? undefined : handleOnFocus}
           onBlur={isReadOnly ? undefined : handleTitleBlur}
           className={`flex-1 overflow-hidden whitespace-pre-wrap break-words text-xl font-bold outline-none ${
             title === "" && !isFocused
               ? "text-gray-300 dark:text-neutral-600" // Dark mode for placeholder text
               : "text-gray-800 dark:text-neutral-100" // Dark mode for actual title text
-          }`}
+          } ${isReadOnly ? "cursor-default" : "cursor-text"}`}
         >
           {title || // If title is empty string, use placeholder
             (!isFocused &&
               (listProp.isPinned
                 ? `--pinned${listProp.position + 1}--`
                 : `--list${listProp.position + 1}--`))}
-        </motion.div>
+        </div>
 
         {/* list handle */}
         <div
@@ -237,11 +245,7 @@ export default function TodoList({
         {listProp.items.map((item, index) => (
           <div key={item.id} className="flex flex-col gap-1">
             <ItemDropIndicator itemId={item.id} />
-            <TodoItem
-              itemProp={item}
-              inSidebar={inSidebar}
-              isReadOnly={isReadOnly}
-            />
+            <TodoItem itemProp={item} loc={loc} isReadOnly={isReadOnly} />
             {index === listProp.items.length - 1 && (
               <ItemDropIndicator itemId={"last-indicator"} />
             )}
@@ -276,7 +280,8 @@ export default function TodoList({
       <button onClick={() => handleEditList()}>
         <LuPen
           className={`absolute -top-4 left-[37.5%] h-7 w-7 -translate-x-1/2 transform rounded-lg bg-white p-1 text-neutral-800 transition-opacity ${isReadOnly ? "" : "group-hover/list:opacity-100"} dark:bg-neutral-800 dark:text-neutral-100 ${
-            (isRightSidebarOpen || isBotbarOpen) && listId === listProp.id
+            (isRightSidebarOpen && listProp.id === rightListId) ||
+            (isBotbarOpen && listProp.id === botListId)
               ? "opacity-100" // Active edit state remains same
               : showMobileActions && !isReadOnly
                 ? "opacity-100"
@@ -297,7 +302,7 @@ export default function TodoList({
               description: "",
               isComplete: false,
               isNew: true,
-              inSidebar,
+              loc,
             },
           })
         }
@@ -309,15 +314,17 @@ export default function TodoList({
       {/* delete list button */}
       <button
         onClick={() => {
-          if (!isReadOnly) {
-            deleteListMutation.mutate({ listId: listProp.id });
-          } else {
-            recoverListMutation.mutate({ listId: listProp.id });
-          }
-          if (listId === listProp.id) {
-            closeBotbar();
+          if (!isReadOnly) deleteListMutation.mutate({ listId: listProp.id });
+          else recoverListMutation.mutate({ listId: listProp.id });
+          // close side/botbar if the list is in edit mode
+          if (listProp.id === rightListId) {
+            setRightListId("");
             closeRightSidebar();
+          } else if (listProp.id === botListId) {
+            setBotListId("");
+            closeBotbar();
           }
+          // Show toast notification
           toast.custom((t) => (
             <div
               className={`rounded-lg border-neutral-100 bg-neutral-800 px-4 py-2 text-base text-neutral-100 shadow-lg dark:border-neutral-800 dark:bg-neutral-100 dark:text-neutral-800`}

@@ -24,9 +24,9 @@ export default function Botbar() {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 z-30 flex h-[340px] w-full items-start justify-center overflow-y-auto bg-blue-50 py-10 pl-14 pr-12 dark:bg-neutral-700 ${isBotbarOpen ? "translate-y-0" : "translate-y-[340px]"}`} // Added transition for smoothness
+      className={`fixed bottom-0 left-0 z-30 flex h-[340px] w-full items-start justify-center overflow-y-auto bg-blue-50 py-10 pl-14 pr-12 dark:bg-neutral-700 ${isBotbarOpen ? "translate-y-0" : "translate-y-[340px]"}`}
     >
-      {list && <TodoList listProp={list} inSidebar={true} />}
+      {list && <TodoList listProp={list} loc={"botbar"} />}
     </div>
   );
 }

@@ -41,7 +41,7 @@ export function TodoGrid({ listsProp }: { listsProp: ListWithItems[] }) {
           {pinnedLists.map((list, index) => (
             <div key={list.id} className="flex">
               <ListDropIndicator listId={list.id} />
-              <TodoList listProp={list} inSidebar={false} />
+              <TodoList listProp={list} loc={"page"} />
               {index === pinnedLists.length - 1 && (
                 <ListDropIndicator listId={"last-indicator"} />
               )}
@@ -72,7 +72,7 @@ export function TodoGrid({ listsProp }: { listsProp: ListWithItems[] }) {
           {regularLists.map((list, index) => (
             <div key={list.id} className="flex">
               <ListDropIndicator listId={list.id} />
-              <TodoList listProp={list} inSidebar={false} />
+              <TodoList listProp={list} loc={"page"} />
               {index === regularLists.length - 1 && (
                 <ListDropIndicator listId={"last-indicator"} />
               )}

@@ -53,7 +53,7 @@ export default function Page() {
     <main
       className={`overflow-y-auto ${isRightSidebarOpen ? "mr-80" : "mr-0"}`}
     >
-      <div className={`${isBotbarOpen ? "mb-80" : "mb-0"} pl-12 pr-10`}>
+      <div className={` ${isBotbarOpen ? "mb-80" : "mb-0"} pl-12 pr-10`}>
         <TodoGrid listsProp={lists} />
       </div>
     </main>
