@@ -82,6 +82,6 @@ export const authConfig = {
   },
   session: {
     maxAge: 60 * 60, // each extend extends by 60min
-    updateAge: 30 * 60, // extend once every 60min (even if there are multiple requests within that 30 min)
+    updateAge: 10 * 60, // extend once every 60min (even if there are multiple requests within that 30 min)
   },
 } satisfies NextAuthConfig;

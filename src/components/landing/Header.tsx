@@ -52,7 +52,7 @@ const Header: React.FC = () => {
             <Link
               href={{
                 pathname: "/api/auth/signin",
-                // query: { callbackUrl: "/dashboard" },
+                query: { callbackUrl: "/dashboard" },
               }}
               className="hidden rounded-full bg-primary px-8 py-3 text-background transition-colors hover:bg-primary-accent md:block"
             >
