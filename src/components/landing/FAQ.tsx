@@ -11,9 +11,9 @@ import { faqs } from "@/data/faq";
 
 const FAQ: React.FC = () => {
   return (
-    <section id="faq" className="py-10 lg:py-20">
+    <section id="faq" className="pb-10 lg:pt-10">
       <div className="flex flex-col gap-10 lg:flex-row">
-        <div className="">
+        {/* <div className="">
           <p className="hidden text-foreground-accent lg:block">FAQ&apos;S</p>
           <SectionTitle>
             <h2 className="my-3 text-center !leading-snug lg:max-w-sm lg:text-left">
@@ -29,25 +29,25 @@ const FAQ: React.FC = () => {
           >
             help@finwise.com
           </a>
-        </div>
+        </div> */}
 
-        <div className="mx-auto w-full border-b lg:max-w-2xl">
+        <div className="mx-auto w-full max-w-xl border-b border-neutral-600 dark:border-neutral-300 lg:max-w-2xl">
           {faqs.map((faq, index) => (
-            <div key={index} className="mb-7">
+            <div key={index} className="mb-5">
               <Disclosure>
                 {({ open }) => (
                   <div>
-                    <DisclosureButton className="flex w-full items-center justify-between border-t px-4 pt-7 text-left text-lg">
-                      <span className="text-2xl font-semibold">
+                    <DisclosureButton className="flex w-full items-center justify-between border-t border-neutral-600 px-4 pt-5 text-left text-lg dark:border-neutral-300">
+                      <span className="text-xl font-semibold">
                         {faq.question}
                       </span>
                       {open ? (
-                        <BiMinus className="h-5 w-5 text-secondary" />
+                        <BiMinus className="h-5 w-5 text-neutral-800 dark:text-neutral-100" />
                       ) : (
-                        <BiPlus className="h-5 w-5 text-secondary" />
+                        <BiPlus className="h-5 w-5 text-neutral-800 dark:text-neutral-100" />
                       )}
                     </DisclosureButton>
-                    <DisclosurePanel className="px-4 pb-2 pt-4 text-foreground-accent">
+                    <DisclosurePanel className="px-4 pb-0 pt-4 text-foreground-accent">
                       {faq.answer}
                     </DisclosurePanel>
                   </div>

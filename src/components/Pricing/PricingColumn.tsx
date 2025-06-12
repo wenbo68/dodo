@@ -14,39 +14,47 @@ const PricingColumn: React.FC<Props> = ({ tier, highlight }: Props) => {
   return (
     <div
       className={clsx(
-        "mx-auto w-full max-w-sm rounded-xl border border-gray-200 bg-white lg:max-w-full",
+        "mx-auto w-full max-w-sm rounded-xl border border-neutral-200 bg-white dark:border-neutral-400 dark:bg-neutral-800",
         { "shadow-lg": highlight },
       )}
     >
-      <div className="rounded-t-xl border-b border-gray-200 p-6">
+      <div className="rounded-t-xl border-b border-neutral-200 p-6">
         <h3 className="mb-4 text-2xl font-semibold">{name}</h3>
         <p className="mb-6 text-3xl font-bold md:text-5xl">
-          <span className={clsx({ "text-secondary": highlight })}>
+          <span
+            className={clsx({
+              "text-neutral-800 dark:text-neutral-100": highlight,
+            })}
+          >
             {typeof price === "number" ? `$${price}` : price}
           </span>
           {typeof price === "number" && (
-            <span className="text-lg font-normal text-gray-600">/mo</span>
+            <span className="text-lg font-normal text-neutral-600 dark:text-neutral-300">
+              /mo
+            </span>
           )}
         </p>
         <button
           className={clsx("w-full rounded-full px-4 py-3 transition-colors", {
-            "bg-primary hover:bg-primary-accent": highlight,
-            "bg-hero-background hover:bg-gray-200": !highlight,
+            "bg-blue-500 text-neutral-100 hover:bg-blue-400": highlight,
+            "bg-hero-background hover:bg-neutral-200": !highlight,
           })}
         >
           Get Started
         </button>
       </div>
-      <div className="mt-1 p-6">
-        <p className="mb-0 font-bold">FEATURES</p>
-        <p className="mb-5 text-foreground-accent">
+      <div className="flex flex-col gap-5 p-6">
+        <p className="font-bold">FEATURES</p>
+        {/* <p className="mb-5 text-foreground-accent">
           Everything in basic, plus...
-        </p>
-        <ul className="mb-8 space-y-4">
+        </p> */}
+        <ul className="mb-0 flex flex-col gap-3">
           {features.map((feature, index) => (
-            <li key={index} className="flex items-center">
-              <BsFillCheckCircleFill className="mr-2 h-5 w-5 text-secondary" />
-              <span className="text-foreground-accent">{feature}</span>
+            <li key={index} className="flex items-center gap-2">
+              <BsFillCheckCircleFill className="h-5 w-5 text-neutral-700 dark:text-neutral-200" />
+              <span className="text-neutral-800 dark:text-neutral-100">
+                {feature}
+              </span>
             </li>
           ))}
         </ul>
