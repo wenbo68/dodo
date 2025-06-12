@@ -10,17 +10,17 @@ import Stats from "@/components/landing/Stats";
 import CTA from "@/components/landing/CTA";
 
 const HomePage: React.FC = () => {
-  const color1 = "bg-neutral-50";
-  const color2 = "bg-white";
+  const color1 = "bg-neutral-50 dark:bg-neutral-700";
+  const color2 = "bg-white dark:bg-neutral-800";
 
   return (
     <>
       <Hero />
-      <Logos />
+      {/* <Logos /> */}
       <Container>
         <Section
           id="benefits"
-          title="Benefits"
+          title="Features"
           description="Discover what makes us different"
           bgColor={color1}
         >
@@ -30,38 +30,38 @@ const HomePage: React.FC = () => {
         <Section
           id="pricing"
           title="Pricing"
-          description="Simple, transparent pricing. No surprises."
+          description="Transparent pricing. No surprises."
           bgColor={color2}
         >
           <Pricing />
         </Section>
 
-        <Section
+        {/* <Section
           id="testimonials"
           title="What Our Clients Say"
           description="Hear from those who have partnered with us."
           bgColor={color1}
         >
           <Testimonials />
-        </Section>
+        </Section> */}
 
         <Section
           id="faq"
           title="FAQ"
           description="Frequently Asked Questions"
-          bgColor={color2}
+          bgColor={color1}
         >
           <FAQ />
         </Section>
 
-        <Section
+        {/* <Section
           id="stats"
           title="Stats"
           description="Our Impact in Numbers"
           bgColor={color1}
         >
           <Stats />
-        </Section>
+        </Section> */}
 
         <CTA />
       </Container>
