@@ -5,14 +5,15 @@ import { FaFingerprint } from "react-icons/fa";
 import { siteDetails } from "@/data/siteDetails";
 import { footerDetails } from "@/data/footer";
 import { getPlatformIconByName } from "@/lib/utils/utils";
+import { FaSquareCheck } from "react-icons/fa6";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-white py-10 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100">
+    <footer className="bg-neutral-50 py-10 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-100">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 px-6 md:grid-cols-3">
         <div>
           <Link href="/" className="flex items-center gap-2">
-            <FaFingerprint className="h-5 w-5 min-w-fit md:h-7 md:w-7" />
+            <FaSquareCheck className="h-5 w-5 min-w-fit md:h-7 md:w-7" />
             <h3 className="manrope cursor-pointer text-xl font-semibold">
               {siteDetails.siteName}
             </h3>
@@ -26,7 +27,7 @@ const Footer: React.FC = () => {
           <ul className="text-foreground-accent">
             {footerDetails.quickLinks.map((link) => (
               <li key={link.text} className="mb-2">
-                <Link href={link.url} className="hover:text-foreground">
+                <Link href={link.url} className="">
                   {link.text}
                 </Link>
               </li>
@@ -39,7 +40,7 @@ const Footer: React.FC = () => {
           {footerDetails.email && (
             <a
               href={`mailto:${footerDetails.email}`}
-              className="block text-foreground-accent hover:text-foreground"
+              className="block text-foreground-accent"
             >
               Email: {footerDetails.email}
             </a>
@@ -48,7 +49,7 @@ const Footer: React.FC = () => {
           {footerDetails.telephone && (
             <a
               href={`tel:${footerDetails.telephone}`}
-              className="block text-foreground-accent hover:text-foreground"
+              className="block text-foreground-accent"
             >
               Phone: {footerDetails.telephone}
             </a>

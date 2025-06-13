@@ -23,9 +23,9 @@ export const footerDetails: {
     },
   ],
   email: "laboratorymember008@gmail.com",
-  telephone: "+82 (10) 3472-1526",
+  telephone: "+82 10-3472-1526",
   socials: {
-    github: "https://github.com/wenbo68/t3-trial1-postgres",
+    github: "https://github.com/wenbo68/dodo",
     // x: 'https://twitter.com/x',
     // twitter: "https://twitter.com/Twitter",
     // facebook: "https://facebook.com",
