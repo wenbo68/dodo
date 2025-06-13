@@ -10,6 +10,7 @@ import Container from "./Container";
 import { siteDetails } from "@/data/siteDetails";
 import { menuItems } from "@/data/menuItems";
 import DarkModeButton from "../dashboard/dark-mode-button";
+import { FaSquareCheck } from "react-icons/fa6";
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,10 +48,13 @@ const Header: React.FC = () => {
     >
       <Container className="!px-0">
         <nav className="dark:bg-backgrounddark mx-auto flex items-center justify-between bg-background px-5 py-2 shadow-md md:bg-transparent md:shadow-none">
-          <div className="flex justify-between gap-10">
+          <div className="flex justify-between gap-5 md:gap-10">
             {/* Logo */}
-            <Link href="/" className="flex -translate-y-0.5 items-center gap-2">
-              <FaFingerprint className="h-7 w-7 min-w-fit text-neutral-800 dark:text-white" />
+            <Link
+              href="/"
+              className="flex -translate-y-[1px] items-center gap-2"
+            >
+              <FaSquareCheck className="h-7 w-7 min-w-fit text-neutral-800 dark:text-white" />
               <span className="manrope cursor-pointer text-xl font-semibold text-foreground dark:text-white">
                 {siteDetails.siteName}
               </span>
@@ -66,7 +70,10 @@ const Header: React.FC = () => {
                 </li>
               ))}
             </ul>
-            <DarkModeButton />
+
+            <div className="hidden md:block">
+              <DarkModeButton />
+            </div>
           </div>
 
           <Link
@@ -80,18 +87,26 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Mobile Menu Button */}
-          <div className="flex items-center md:hidden">
-            <button
-              onClick={toggleMenu}
-              className="inline-flex items-center justify-center rounded-md p-2 text-neutral-800 dark:text-white md:hidden"
-            >
-              <span className="sr-only">Open main menu</span>
-              {isOpen ? (
-                <HiOutlineXMark className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <HiBars3 className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <div className="translate-y-0.5 md:hidden">
+              <DarkModeButton />
+            </div>
+            <div className="flex items-center md:hidden">
+              <button
+                onClick={toggleMenu}
+                className="inline-flex items-center justify-center rounded-md p-2 text-neutral-800 dark:text-white md:hidden"
+              >
+                <span className="sr-only">Open main menu</span>
+                {isOpen ? (
+                  <HiOutlineXMark
+                    className="block h-6 w-6"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <HiBars3 className="block h-6 w-6" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         </nav>
       </Container>
@@ -110,24 +125,20 @@ const Header: React.FC = () => {
           id="mobile-menu"
           className="bg-white shadow-lg dark:bg-neutral-800 md:hidden"
         >
-          <ul className="flex flex-col space-y-4 px-6 pb-6 pt-1">
+          <ul className="flex flex-col gap-0">
             {menuItems.map((item) => (
               <li key={item.text}>
                 <Link
                   href={item.url}
-                  className="block text-foreground dark:text-neutral-100"
+                  className="block py-1 pl-6 text-foreground dark:text-neutral-100"
                   onClick={toggleMenu}
                 >
                   {item.text}
                 </Link>
               </li>
             ))}
-            <li>
-              <Link
-                href="/api/auth/signin"
-                className="block w-fit rounded-full bg-primary px-5 py-2 text-black dark:text-neutral-100"
-                onClick={toggleMenu}
-              >
+            <li className="w-full bg-blue-500 py-1 pl-6 text-neutral-100">
+              <Link href="/api/auth/signin" onClick={toggleMenu}>
                 Sign in
               </Link>
             </li>

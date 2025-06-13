@@ -37,6 +37,45 @@ export const metadata: Metadata = {
     description: siteDetails.metadata.description,
     images: ["/images/twitter-image.jpg"],
   },
+  icons: {
+    icon: "/favicon.ico", // Automatically found in app/favicon.ico
+    apple: "/apple-icon.png", // Relative to public/
+    other: [
+      {
+        rel: "icon",
+        type: "image/svg+xml", // Adjust type if needed based on the SVG content
+        url: "/icon0.svg", // Relative to public/
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "any", // Or the specific size of icon1.png if known (e.g., '32x32')
+        url: "/icon1.png", // Relative to public/
+      },
+      // The web-app-manifest icons are usually referenced *inside* manifest.json,
+      // but if you also want them as standalone links, you can add them.
+      // However, usually, the manifest handles these.
+      // Example if you *did* want to link them explicitly:
+      // {
+      //   rel: 'icon',
+      //   type: 'image/png',
+      //   sizes: '192x192',
+      //   url: '/web-app-manifest-192x192.png',
+      // },
+      // {
+      //   rel: 'icon',
+      //   type: 'image/png',
+      //   sizes: '512x512',
+      //   url: '/web-app-manifest-512x512.png',
+      // },
+    ],
+  },
+  manifest: "/manifest.json", // Reference to the manifest file in public/
+
+  appleWebApp: {
+    title: siteDetails.siteName, // Use your siteName as the title on iOS home screen
+    // statusBarStyle and startupImage can also be defined here if needed
+  },
 };
 
 export default function RootLayout({
