@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { motion, Variants } from "framer-motion";
 
 import BenefitBullet from "./BenefitBullet";
-import SectionTitle from "../landing/SectionTitle";
+import SectionTitle from "../SectionTitle";
 import type { IBenefit } from "@/types";
 
 interface Props {
@@ -104,7 +104,7 @@ const BenefitSection: React.FC<Props> = ({ benefit, imageAtRight }: Props) => {
           >
             {/* Conditional Rendering: Render video if videoSrc exists, otherwise render Image */}
             {videoSrc ? (
-              <div className="rounded-lg bg-white p-1">
+              <div className="rounded-2xl bg-white p-1">
                 <video
                   width={defaultWidth} // Use explicit width/height for video
                   height={defaultHeight} // Helps prevent layout shift for video
