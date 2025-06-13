@@ -5,6 +5,7 @@ import { FaFingerprint } from "react-icons/fa";
 import { siteDetails } from "@/data/siteDetails";
 import { footerDetails } from "@/data/footer";
 import { getPlatformIconByName } from "@/lib/utils/utils";
+
 import { FaSquareCheck } from "react-icons/fa6";
 
 const Footer: React.FC = () => {
@@ -14,6 +15,7 @@ const Footer: React.FC = () => {
         <div>
           <Link href="/" className="flex items-center gap-2">
             <FaSquareCheck className="h-5 w-5 min-w-fit md:h-7 md:w-7" />
+
             <h3 className="manrope cursor-pointer text-xl font-semibold">
               {siteDetails.siteName}
             </h3>

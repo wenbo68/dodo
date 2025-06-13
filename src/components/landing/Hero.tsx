@@ -19,7 +19,7 @@ const Hero: React.FC = () => {
         <p className="mx-auto mt-10 max-w-lg text-neutral-800 dark:text-neutral-100">
           {heroDetails.subheading}
         </p>
-        {/* <div className="mt-10 bg-white px-1 pt-1"> */}
+
         <Image
           src={heroDetails.centerImageSrc}
           width={718 / 2}

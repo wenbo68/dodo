@@ -17,6 +17,7 @@ export const benefits: IBenefit[] = [
     title: "Drag Anything, Drop Anywhere",
     description:
       "Drop items on different lists. Drop lists on different areas.",
+
     bullets: [
       //   {
       //     title: "Intelligent Categorization",
@@ -24,13 +25,16 @@ export const benefits: IBenefit[] = [
       //       "Automatically sorts your transactions for crystal-clear insights.",
       //     icon: <FiBarChart2 size={26} />,
       //   },
+
     ],
     videoSrc: "/videos/dnd-video.webm",
+
   },
   {
     title: "Edit Mode",
     description:
       "Click the edit button to pin a list to the sidebar. Editing & referencing made easy.",
+
     bullets: [
       //   {
       //     title: "Micro-Investing",
