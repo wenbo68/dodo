@@ -138,7 +138,13 @@ const Header: React.FC = () => {
               </li>
             ))}
             <li className="w-full bg-blue-500 py-1 pl-6 text-neutral-100">
-              <Link href="/api/auth/signin" onClick={toggleMenu}>
+              <Link
+                href={{
+                  pathname: "/api/auth/signin",
+                  query: { callbackUrl: "/dashboard" },
+                }}
+                onClick={toggleMenu}
+              >
                 Sign in
               </Link>
             </li>
