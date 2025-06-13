@@ -2,8 +2,9 @@ export const siteDetails = {
   siteName: "Dodo",
   siteUrl: "https://dodo.vercel.app/",
   metadata: {
-    title: "Dodo: free to-do app",
-    description: "Dodo makes writing to-do lists and memos easier.",
+    title: "Dodo: free to-do lists",
+    description:
+      "Dodo makes it easier to write and handle to-do lists and memos.",
   },
   language: "en-us",
   locale: "en-US",

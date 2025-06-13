@@ -39,7 +39,8 @@ export interface IMenuItem {
 export interface IBenefit {
   title: string;
   description: string;
-  imageSrc: string;
+  imageSrc?: string;
+  videoSrc?: string;
   bullets: IBenefitBullet[];
 }
 
