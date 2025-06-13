@@ -19,17 +19,19 @@ const Hero: React.FC = () => {
         <p className="mx-auto mt-10 max-w-lg text-neutral-800 dark:text-neutral-100">
           {heroDetails.subheading}
         </p>
+        {/* <div className="mt-10 bg-white px-1 pt-1"> */}
         <Image
           src={heroDetails.centerImageSrc}
-          width={384}
-          height={340}
+          width={718 / 2}
+          height={912 / 2}
           quality={100}
-          sizes="(max-width: 768px) 100vw, 384px"
+          sizes=""
           priority={true}
           unoptimized={true}
           alt="app mockup"
-          className="relative z-10 mx-auto mt-10"
+          className="z-10 mx-auto mt-12 rounded-t-2xl"
         />
+        {/* </div> */}
       </div>
     </section>
   );

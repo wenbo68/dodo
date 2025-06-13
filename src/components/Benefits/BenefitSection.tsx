@@ -47,7 +47,11 @@ export const childVariants = {
 };
 
 const BenefitSection: React.FC<Props> = ({ benefit, imageAtRight }: Props) => {
-  const { title, description, imageSrc, bullets } = benefit;
+  const { title, description, imageSrc, videoSrc, bullets } = benefit;
+
+  // Define default dimensions for both image and video
+  const defaultWidth = 1468;
+  const defaultHeight = 850;
 
   return (
     <section className="benefit-section">
@@ -98,14 +102,40 @@ const BenefitSection: React.FC<Props> = ({ benefit, imageAtRight }: Props) => {
               "justify-end": !imageAtRight,
             })}
           >
-            <Image
-              src={imageSrc}
-              alt="title"
-              width="384"
-              height="762"
-              quality={100}
-              className="lg:ml-0"
-            />
+            {/* Conditional Rendering: Render video if videoSrc exists, otherwise render Image */}
+            {videoSrc ? (
+              <div className="rounded-lg bg-white p-1">
+                <video
+                  width={defaultWidth} // Use explicit width/height for video
+                  height={defaultHeight} // Helps prevent layout shift for video
+                  autoPlay // Autoplay the video
+                  loop // Loop the video continuously
+                  muted // Mute the video (essential for autoplay in most browsers)
+                  playsInline // Important for mobile devices to play inline
+                  className="rounded-2xl shadow-lg lg:ml-0" // Add styling as needed
+                >
+                  <source src={videoSrc} type="video/webm" />
+                  {/* Fallback for browsers that don't support WebM */}
+                  {/* You might want to provide an MP4 version here as well for broader compatibility */}
+                  {/* <source src={videoSrc.replace('.webm', '.mp4')} type="video/mp4" /> */}
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            ) : imageSrc ? (
+              <Image
+                src={imageSrc}
+                alt={title} /* Use the title for alt text for better context */
+                width={defaultWidth} // Use explicit width/height for Image
+                height={defaultHeight} // Helps prevent layout shift for Image
+                quality={100}
+                className="rounded-2xl shadow-lg lg:ml-0" // Add styling as needed
+              />
+            ) : (
+              // Fallback if neither image nor video is provided
+              <div className="flex h-[762px] w-[384px] items-center justify-center rounded-lg bg-gray-200 text-gray-500">
+                No Media
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

@@ -1,6 +1,5 @@
 export const heroDetails = {
-  heading: "Smart & Minimalist To-do App",
-  subheading:
-    "An incredible drag and drop experience that just makes more sense",
-  centerImageSrc: "/images/hero-mockup.webp",
+  heading: "Simple To-do Lists",
+  subheading: "A smooth drag and drop experience that makes organizing easy",
+  centerImageSrc: "/images/dodo-hero-mockup.webp",
 };
